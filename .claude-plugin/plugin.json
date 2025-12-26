@@ -1,0 +1,17 @@
+{
+  "name": "ai-assisted-project-orchestration",
+  "version": "0.1.0",
+  "description": "Skills for AI-assisted project orchestration following best practices for software development lifecycle, architecture documentation, and quality automation",
+  "author": "Georges Martin",
+  "repository": "https://github.com/jrjsmrtn/ai-assisted-project-orchestration-skills",
+  "keywords": [
+    "project-orchestration",
+    "agile",
+    "sprint",
+    "architecture",
+    "adr",
+    "c4-model",
+    "quality",
+    "pre-commit"
+  ]
+}
