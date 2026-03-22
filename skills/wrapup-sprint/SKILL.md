@@ -2,280 +2,211 @@
 # SPDX-FileCopyrightText: 2025 Georges Martin <jrjsmrtn@gmail.com>
 # SPDX-License-Identifier: MIT
 name: wrapup-sprint
-description: Complete a sprint with proper documentation, retrospective, and release tagging. Use when all sprint stories are completed, at the end of a sprint cycle, or before starting a new sprint.
+description: Complete a sprint with retrospective, changelog update, and release tagging. Use when sprint work is done, at the end of a sprint cycle, or before starting a new sprint.
 ---
 
-# Sprint Completion
+# Wrap Up Sprint
 
-Complete a sprint with proper documentation, retrospective, and release tagging.
+Complete a sprint with retrospective, changelog update, and release tagging.
 
 ## When to Use
 
-- When all user stories in a sprint are completed
-- At the end of a sprint cycle (typically 2 weeks)
+- When all planned work in a sprint is completed or explicitly deferred
+- At the end of a sprint cycle
 - Before starting a new sprint
 
 ## Required Inputs
 
 1. **Sprint number** (e.g., 3)
-2. **Version to release** (e.g., 0.4.0)
-3. **Sprint goal** (from sprint plan)
-4. **Completed stories** with points and BDD scenario counts
-5. **Any stories deferred** to next sprint
+2. **Version to release** (e.g., 0.1.5)
 
 ## Prerequisites
 
 Before running this skill, verify:
-- [ ] All planned stories are complete OR explicitly deferred
-- [ ] All tests passing (`mix test` or `pytest`)
-- [ ] All pre-commit and pre-push hooks pass
-- [ ] Code reviewed and merged to develop branch
+- [ ] All planned work is complete OR explicitly deferred
+- [ ] All tests passing
+- [ ] Pre-commit and pre-push hooks pass
 
 ## Workflow
 
-### Step 1: Create/Update Sprint Backlog
+### Step 1: Review Sprint Plan
 
-If `docs/sprints/sprint-N-backlog.md` doesn't exist, create it. Otherwise, update it.
+Read the sprint plan to understand what was committed:
 
-**Sprint Backlog Structure**:
-
-```markdown
-# Sprint [N] Backlog
-
-**Target Version**: v0.x.0
-**Status**: ✅ Complete
-**Dates**: [Start Date] - [End Date] ([duration])
-
-## Sprint Goal
-
-[One-sentence sprint goal]
-
-## Story Points Summary
-
-| Category | Points |
-|----------|--------|
-| Total Planned | XX |
-| Completed | XX |
-| Deferred | 0 |
-
-## Backlog Items
-
-### Epic: [Epic Name]
-
-#### Story [N.1]: [Story Title]
-- **Points**: X
-- **Priority**: High/Medium/Low
-- **Status**: ✅ Complete
-
-**User Story**: As a [role], I want [feature] so that [benefit].
-
-**Acceptance Criteria**:
-- [x] Criterion 1
-- [x] Criterion 2
-- [x] Criterion 3
-
-**BDD Scenarios**: X scenarios - **ALL PASSING** ✅
-
----
-
-[Repeat for each story]
-
-## Definition of Done
-
-- [x] All acceptance criteria met
-- [x] All BDD scenarios passing
-- [x] Code reviewed
-- [x] Tests passing (unit + integration)
-- [x] Documentation updated
-- [x] No critical bugs outstanding
+```bash
+cat docs/sprints/sprint-NN-plan.md
 ```
 
-### Step 2: Create Sprint Retrospective
+Identify:
+- What was delivered
+- What was dropped or deferred (and why)
+- Key decisions or insights from the sprint
 
-Create `docs/sprints/sprint-N-retrospective.md`:
+### Step 2: Update Sprint Plan Status
+
+Mark the sprint plan as complete. Update the status field and check off completed acceptance criteria.
+
+### Step 3: Create Sprint Retrospective
+
+Two formats are available. Choose based on sprint complexity:
+
+- **Minimal** — for routine sprints, single-feature sprints, or sprints without notable issues (default)
+- **Expanded** — for integration work, multi-sprint efforts, or sprints with notable challenges
+
+Create `docs/sprints/sprint-NN-retrospective.md` (markdown) or `sprint-NN-retrospective.yml` (YAML):
+
+#### Minimal Format (Markdown)
 
 ```markdown
 # Sprint [N] Retrospective
 
-**Duration**: [Start] - [End] ([X] days)
-**Goal**: [Sprint goal]
+**Delivered**: yes / partial / no — [one line summary]
+**Dropped**: [anything intentionally cut, and why — or "nothing"]
+**Key insight**: [one thing learned that future sprints should know]
+**Next candidate**: [what this sprint implies about what comes next]
+```
+
+#### Minimal Format (YAML)
+
+```yaml
+sprint: N
+version: v0.1.x
+status: complete
+goal: "[sprint goal]"
+
+what_went_well:
+  - "[success 1]"
+  - "[success 2]"
+
+what_went_wrong:
+  - "[problem 1]"
+
+lessons_learned:
+  - "[actionable insight 1]"
+
+technical_notes:
+  - "[implementation pattern or debugging insight worth preserving]"
+```
+
+#### Expanded Format (Markdown)
+
+Use for integration work against live systems, multi-sprint efforts, or notable issues:
+
+```markdown
+# Sprint [N] Retrospective
+
+**Delivered**: yes / partial / no — [one line summary]
+**Version**: v0.1.x
 **Completed**: [Date]
-**Version**: v0.x.0
-
-## Sprint Summary
-
-[2-3 sentence narrative summary of what was accomplished]
-
-| Metric | Value |
-|--------|-------|
-| Stories Completed | X/X (100%) |
-| Story Points | XX/XX (100%) |
-| BDD Scenarios | XX total |
-| Test Coverage | XX% |
-
-## Sprint Backlog Completion
-
-| Story | Points | Status | Scenarios | Notes |
-|-------|--------|--------|-----------|-------|
-| [Story 1] | X | ✅ | X | [brief note] |
-| [Story 2] | X | ✅ | X | [brief note] |
-| **Total** | **XX** | **100%** | **XX** | |
 
 ## What Went Well
 
 1. **[Success 1]**
-   - Evidence: [specific outcome]
-   - Impact: [benefit achieved]
+   - [Evidence and impact]
 
 2. **[Success 2]**
-   - Evidence: [specific outcome]
-   - Impact: [benefit achieved]
-
-3. **[Success 3]**
-   - Evidence: [specific outcome]
-   - Impact: [benefit achieved]
+   - [Evidence and impact]
 
 ## What Could Be Improved
 
 1. **[Challenge 1]**
-   - Root Cause: [why it happened]
-   - Solution: [how to address]
-
-2. **[Challenge 2]**
-   - Root Cause: [why it happened]
-   - Solution: [how to address]
+   - Root cause: [why it happened]
+   - Action: [how to address]
 
 ## Key Learnings
 
-1. **[Learning 1]**: [insight gained]
-2. **[Learning 2]**: [insight gained]
-3. **[Learning 3]**: [insight gained]
+1. [Actionable insight 1]
+2. [Actionable insight 2]
+
+## Technical Notes
+
+- [Implementation pattern or debugging insight worth preserving for future sessions]
+- [Performance finding, workaround, or library quirk]
 
 ## Action Items for Next Sprint
 
-### Process Improvements
-- [ ] [Action item 1]
-- [ ] [Action item 2]
+- [ ] [Process improvement or follow-up]
+- [ ] [Technical debt item]
 
-### Technical Debt
-- [ ] [Tech debt item if any]
+## Next Candidate
 
-### Documentation
-- [ ] [Doc improvement if any]
-
-## AI Collaboration Effectiveness
-
-| Task Type | Effectiveness | Notes |
-|-----------|---------------|-------|
-| Code generation | High/Medium/Low | [observation] |
-| Test generation | High/Medium/Low | [observation] |
-| Documentation | High/Medium/Low | [observation] |
-| Architecture | High/Medium/Low | [observation] |
-
-## Sprint Highlights
-
-- **Most Valuable Deliverable**: [what and why]
-- **Best Innovation**: [new approach that worked well]
-- **Key Metric**: [impressive statistic]
-
-## Looking Ahead
-
-**Potential Sprint [N+1] Focus Areas**:
-- [Area 1]
-- [Area 2]
-- [Area 3]
-
-## Final Assessment
-
-**Overall Rating**: ⭐⭐⭐⭐⭐ (X/5)
-
-[Brief final thoughts on the sprint]
+[What this sprint implies should come next — chains sprint sequencing]
 ```
 
-### Step 3: Update CHANGELOG.md
+### Step 4: Propagate Key Insights to CLAUDE.md
+
+Review the retrospective's lessons learned and technical notes. If any insight would change how future sessions approach the codebase, add it to the project's CLAUDE.md (e.g., under "AI Collaboration Notes" or "Development Practices").
+
+Examples of insights worth propagating:
+- "AshSqlite generates OR chains not IN — batch Ash.load!/2 in chunks of ~200"
+- "Module X requires injectable roles for test isolation"
+- "Batch processing provides 18-20x speedup over single-item processing"
+
+The retrospective captures the insight; CLAUDE.md makes it actionable in every future session.
+
+### Step 5: Update CHANGELOG.md
 
 Add new version section at the top of CHANGELOG.md (after `## [Unreleased]`):
 
 ```markdown
-## [0.x.0] - YYYY-MM-DD
+## [0.1.x] - YYYY-MM-DD
 
 ### Added
-- **[Story 1]**: [Description]
-  - [Key feature/capability]
-  - [BDD scenario count] scenarios
-- **[Story 2]**: [Description]
-  - [Key feature/capability]
-  - [BDD scenario count] scenarios
+- [New feature or capability from this sprint]
 
 ### Changed
-- [Any changes to existing functionality]
+- [Changes to existing functionality]
 
 ### Fixed
-- [Any bug fixes]
-
-### Technical Details
-- **Sprint**: [N]
-- **Story Points**: [XX]
-- **BDD Scenarios**: [XX] total
-- **Test Coverage**: [XX]%
+- [Bug fixes]
 ```
 
 Update version comparison links at bottom:
 ```markdown
-[0.x.0]: https://github.com/[user]/[repo]/compare/v0.[x-1].0...v0.x.0
+[0.1.x]: https://github.com/[user]/[repo]/compare/v0.1.y...v0.1.x
 ```
 
-### Step 4: Update Sprint Index
+### Step 6: Update Sprint Index
 
-Update `docs/sprints/README.md`:
+Update `docs/sprints/README.md` — mark current sprint complete, remove "Active Sprint" or set to next.
 
-```markdown
-## Current Status
+### Step 7: Update Roadmap
 
-- **Latest Release**: v0.x.0
-- **Completed Sprint**: Sprint [N]
-- **Next Sprint**: Sprint [N+1] (planning)
+Update `docs/roadmap/roadmap.md`:
+- Check off completed milestones in the current phase
+- Add the sprint to the Sprint History table
+- If this sprint completes a phase, mark the phase as done and note the start of the next phase
 
-## Sprint History
-
-| Sprint | Version | Status | Stories | Points |
-|--------|---------|--------|---------|--------|
-| [N] | v0.x.0 | ✅ Complete | X | XX |
-| [N-1] | v0.[x-1].0 | ✅ Complete | X | XX |
-```
-
-### Step 5: Update CLAUDE.md
+### Step 8: Update CLAUDE.md
 
 Update the "Current Development Status" section:
 
 ```markdown
 ## Current Development Status
 
-- **Current Sprint**: Sprint [N+1] (see docs/sprints/sprint-[N+1]-plan.md)
-- **Sprint Goal**: [Next sprint goal or "Planning"]
-- **Status**: Planning
-- **Latest Release**: v0.x.0
+- **Current Sprint**: Between sprints (Sprint [N] complete)
+- **Latest Release**: v0.1.x
+- **Next Sprint**: Sprint [N+1] (planning)
 ```
 
-### Step 6: Create Sprint Wrap-up Commit
+### Step 9: Create Sprint Wrap-up Commit
 
 ```bash
-# Stage all sprint documentation updates
-git add docs/sprints/sprint-N-backlog.md
-git add docs/sprints/sprint-N-retrospective.md
+git add docs/sprints/sprint-NN-plan.md
+git add docs/sprints/sprint-NN-retrospective.md  # or .yml
 git add docs/sprints/README.md
+git add docs/roadmap/roadmap.md
 git add CHANGELOG.md
 git add CLAUDE.md
 
-# Commit with conventional format
-git commit -m "chore: complete Sprint N wrap-up (v0.x.0)"
+git commit -m "chore: complete Sprint N wrap-up (v0.1.x)"
 ```
 
-### Step 7: Tag Release
+### Step 10: Tag Release
 
 ```bash
 # Create annotated tag
-git tag -a v0.x.0 -m "Sprint N Complete: [brief description]"
+git tag -a v0.1.x -m "Sprint N: [brief description]"
 
 # Push to origin (private)
 git push origin develop --tags
@@ -284,60 +215,43 @@ git push origin develop --tags
 # git checkout main
 # git merge develop
 # git push origin main --tags
-# git push github main --tags  # public
+# git push github main --tags
 ```
 
-### Step 8: Prepare Next Sprint
+### Step 11: Prepare Next Sprint
 
 Suggest running `plan-sprint` skill to create Sprint N+1 plan.
-
-## Quality Checklist
-
-Before marking sprint complete, verify all items:
-
-- [ ] All user stories marked complete in sprint backlog
-- [ ] All BDD scenarios passing
-- [ ] All documentation deliverables completed
-- [ ] Sprint backlog document created/updated
-- [ ] Sprint retrospective written
-- [ ] CHANGELOG.md updated with new version
-- [ ] docs/sprints/README.md current status updated
-- [ ] CLAUDE.md current sprint reference updated
-- [ ] Version bumped appropriately (0.x.0)
-- [ ] Sprint wrap-up commit created
-- [ ] Git tag created for release
-- [ ] All commits follow conventional commit format
-- [ ] Pre-commit and pre-push hooks pass
 
 ## Outputs
 
 This skill creates/updates:
-- [ ] `docs/sprints/sprint-N-backlog.md`
-- [ ] `docs/sprints/sprint-N-retrospective.md`
+- [ ] `docs/sprints/sprint-NN-plan.md` (status updated)
+- [ ] `docs/sprints/sprint-NN-retrospective.md` (or `.yml`)
 - [ ] `docs/sprints/README.md` (status update)
+- [ ] `docs/roadmap/roadmap.md` (milestones and sprint history updated)
 - [ ] `CHANGELOG.md` (new version section)
-- [ ] `CLAUDE.md` (current sprint reference)
-- [ ] Git commit: `chore: complete Sprint N wrap-up (v0.x.0)`
-- [ ] Git tag: `v0.x.0`
+- [ ] `CLAUDE.md` (current sprint reference + propagated insights)
+- [ ] Git commit: `chore: complete Sprint N wrap-up`
+- [ ] Git tag: `v0.1.x`
 
 ## Validation
 
 ```bash
 # Verify all tests pass
-mix test  # or pytest
+mix test  # or pytest, cargo test, etc.
 
 # Verify changelog has new version
-grep "## \[0.x.0\]" CHANGELOG.md
+grep "## \[0.1.x\]" CHANGELOG.md
 
 # Verify tag exists
-git tag -l "v0.x.0"
+git tag -l "v0.1.x"
 
-# Verify CLAUDE.md updated
-grep "Latest Release" CLAUDE.md
+# Verify retrospective exists
+ls docs/sprints/sprint-NN-retrospective.*
 ```
 
 ## Related Skills
 
 - `plan-sprint` - Create next sprint plan
 - `bootstrap-project` - Initial project setup
-- `create-adrs` - ADR-0002 documents sprint practices
+- `setup-adrs` - ADR-0002 documents sprint practices

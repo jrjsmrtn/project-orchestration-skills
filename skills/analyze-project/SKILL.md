@@ -375,5 +375,5 @@ SPARK analysis is valid when:
 ## Related Skills
 
 - `bootstrap-project` - Run after SPARK if proceeding
-- `create-adrs` - Document key decisions from SPARK
+- `setup-adrs` - Document key decisions from SPARK
 - `setup-architecture-as-code` - Architecture emerges from SPARK analysis

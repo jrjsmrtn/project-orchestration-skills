@@ -55,7 +55,9 @@ docs/
 │   └── .gitkeep
 ├── architecture/       # C4 DSL models
 │   └── .gitkeep
-└── sprints/            # Sprint planning and tracking
+├── sprints/            # Sprint planning and tracking
+│   └── .gitkeep
+└── roadmap/            # Project roadmap and phase planning
     └── .gitkeep
 ```
 
@@ -184,7 +186,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [Unreleased]: https://github.com/[username]/[project]/compare/v0.1.0...HEAD
 ```
 
-### Phase 5: Create README.md
+### Phase 5: Create Roadmap
+
+Create `docs/roadmap/roadmap.md` with an initial project roadmap:
+
+```markdown
+# [Project Name] Roadmap
+
+## Vision
+
+[1-2 sentence project vision — what the project achieves when complete]
+
+## Phases
+
+### Phase 1: Foundation
+**Target**: v0.1.x
+**Focus**: [Core infrastructure, initial capabilities]
+
+- [ ] [Milestone 1]
+- [ ] [Milestone 2]
+
+### Phase 2: [Next Major Capability]
+**Target**: v0.2.x
+**Focus**: [What this phase delivers]
+
+- [ ] [Milestone 1]
+- [ ] [Milestone 2]
+
+### Phase 3: [Production Readiness]
+**Target**: v1.0.0
+**Focus**: [Hardening, documentation, release]
+
+- [ ] [Milestone 1]
+- [ ] [Milestone 2]
+
+## Sprint History
+
+| Sprint | Phase | Version | Summary |
+|--------|-------|---------|---------|
+| 1 | Foundation | v0.1.0 | [Brief description] |
+```
+
+The roadmap is a living document — update it as phases complete and new ones emerge.
+
+### Phase 6: Create README.md
 
 Generate a README.md with:
 - Project name and description
@@ -194,7 +239,7 @@ Generate a README.md with:
 - License
 - Contributing guidelines reference
 
-### Phase 6: Seed Traced Artifacts (if Audience Registry exists)
+### Phase 7: Seed Traced Artifacts (if Audience Registry exists)
 
 If SPARK analysis created `docs/reference/audience-registry.md`, seed initial artifacts:
 
@@ -242,11 +287,11 @@ title: Getting Started
 
 > **Pattern Reference**: See [AUDIENCE-DRIVEN ARTIFACTS](../../../docs/patterns/inception/audience-driven-artifacts.md)
 
-### Phase 7: Invoke Related Skills
+### Phase 8: Invoke Related Skills
 
 After completing the bootstrap, suggest invoking:
 
-1. **create-adrs** - Create ADR-0001, 0002, 0003, 0004
+1. **setup-adrs** - Create ADR-0001, 0002, 0003, 0004
 2. **setup-pre-commit** - Configure quality gates
 3. **setup-architecture-as-code** - Create architecture model (C4/Structurizr)
 4. **plan-sprint** - Create Sprint 1 plan
@@ -258,6 +303,7 @@ This skill creates:
 - [ ] `.gitignore` (technology-specific + security patterns)
 - [ ] `CLAUDE.md` (project-specific)
 - [ ] `CHANGELOG.md` (initialized)
+- [ ] `docs/roadmap/roadmap.md` (initial phases)
 - [ ] `README.md` (skeleton)
 - [ ] Git branches (`main`, `develop`)
 - [ ] (If Audience Registry) `features/` subdirectories per audience category
@@ -275,7 +321,7 @@ Verify successful bootstrap:
 ## Related Skills
 
 - `analyze-project` - Run SPARK analysis before bootstrap
-- `create-adrs` - Next step: create foundational ADRs
+- `setup-adrs` - Next step: create foundational ADRs
 - `setup-pre-commit` - Configure pre-commit hooks
 - `setup-architecture-as-code` - Create architecture model
 - `plan-sprint` - Create initial sprint plan

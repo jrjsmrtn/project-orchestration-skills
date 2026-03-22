@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: 2025 Georges Martin <jrjsmrtn@gmail.com>
 # SPDX-License-Identifier: MIT
 name: setup-pre-commit
-description: Configure two-stage pre-commit hooks for quality automation. Use after bootstrap-project and create-adrs, when adding quality gates to an existing project, or when standardizing quality automation.
+description: Configure two-stage pre-commit hooks for quality automation. Use after bootstrap-project and setup-adrs, when adding quality gates to an existing project, or when standardizing quality automation.
 ---
 
 # Setup Pre-commit Hooks
@@ -11,7 +11,7 @@ Configure two-stage pre-commit hooks for quality automation.
 
 ## When to Use
 
-- After running `bootstrap-project` and `create-adrs` skills
+- After running `bootstrap-project` and `setup-adrs` skills
 - When adding quality gates to an existing project
 - When standardizing quality automation across projects
 
@@ -416,5 +416,5 @@ git commit -m "chore: update pre-commit hook versions"
 
 ## Related Skills
 
-- `create-adrs` - ADR-0002 documents these practices
+- `setup-adrs` - ADR-0002 documents these practices
 - `validate-quality-config` - Validate configuration consistency

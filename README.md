@@ -30,7 +30,7 @@ Add to your project's `.claude/settings.json`:
 |-------|-------------|
 | **analyze-project** | SPARK methodology analysis for new project inception |
 | **bootstrap-project** | Bootstrap a new project with foundational artifacts |
-| **create-adrs** | Create foundational Architecture Decision Records |
+| **setup-adrs** | Create foundational Architecture Decision Records |
 
 ### Architecture & Documentation
 
@@ -59,7 +59,7 @@ After installation, invoke skills using slash commands:
 ```
 /analyze-project
 /bootstrap-project
-/create-adrs
+/setup-adrs
 /setup-architecture-as-code
 /setup-pre-commit
 /validate-quality-config

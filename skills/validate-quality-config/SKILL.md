@@ -266,6 +266,6 @@ Add validation to pre-commit for config files:
 ## Related Skills
 
 - `setup-pre-commit` - Creates the configs this validates
-- `create-adrs` - ADR-0002 documents quality practices
+- `setup-adrs` - ADR-0002 documents quality practices
 
 > **Pattern Reference**: See [CONSISTENT-QUALITY-GATES](../../../docs/patterns/quality/consistent-quality-gates.md)

@@ -553,6 +553,6 @@ Architecture-as-Code is particularly AI-friendly:
 ## Related Skills
 
 - `bootstrap-project` - Creates initial directory structure
-- `create-adrs` - ADR-0002 documents architecture-as-code practice
+- `setup-adrs` - ADR-0002 documents architecture-as-code practice
 - `analyze-project` - SPARK analysis informs architecture
 - `plan-sprint` - Architecture updates tracked in sprints
