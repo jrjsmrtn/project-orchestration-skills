@@ -1,5 +1,5 @@
 {
-  "name": "ai-orchestration",
+  "name": "ai-assisted-project-orchestration-skills",
   "owner": {
     "name": "Georges Martin",
     "email": "jrjsmrtn@gmail.com"
@@ -7,9 +7,10 @@
   "plugins": [
     {
       "name": "ai-assisted-project-orchestration",
-      "source": "..",
-      "description": "Skills for AI-assisted project orchestration following best practices for software development lifecycle, architecture documentation, and quality automation",
-      "version": "0.1.0"
+      "source": {
+        "source": "url",
+        "url": "https://github.com/jrjsmrtn/ai-assisted-project-orchestration-skills.git"
+      }
     }
   ]
 }
