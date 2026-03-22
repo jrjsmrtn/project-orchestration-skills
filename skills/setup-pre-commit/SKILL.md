@@ -104,26 +104,223 @@ indent_size = 4
 max_line_length = 120
 ```
 
-### Step 2: Install Pre-commit Framework
+### Step 2: Secret Detection Architecture
+
+Secret detection works in three layers:
+
+**Layer 1: Global gitleaks config** (`~/.gitleaks.toml`)
+- Infrastructure-specific patterns (hostnames, domains, private IPs, custom ports)
+- Allowlists for git-ignored files (CLAUDE.local.md, .envrc, vault files)
+- RFC 5737/7042 documentation addresses excluded from false positives
+
+**Layer 2: Project gitleaks config** (`.gitleaks.toml`, `.gitleaksignore`)
+- Test fixture allowlists (generated keys, X.509 elements, mock data)
+- Documentation allowlists (demo credentials in tutorials)
+- Stop words for test data: test, example, sample, dummy, fake, mock, stub
+
+**Layer 3: Git hooks** (pre-commit stage)
+- `gitleaks protect --staged` on every commit
+- Catches secrets before they enter git history
+
+Create `.gitleaks.toml` if the project has test fixtures or documentation with intentional fake credentials:
+
+```toml
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Project-specific allowlist for test data and documentation"
+
+# Test fixtures with intentional fake data
+paths = [
+    '''test/fixtures/.*''',
+    '''test/support/.*''',
+]
+
+# Stop words — values containing these are not secrets
+stopwords = [
+    "test",
+    "example",
+    "sample",
+    "dummy",
+    "fake",
+    "mock",
+]
+```
+
+Use `.gitleaksignore` for specific false positives that can't be handled by rules:
+
+```
+# Explain why each entry is not a real secret
+path/to/file.ex:rule-id:line-number
+```
+
+### Step 3: Sensitive Files in .gitignore
+
+Ensure `.gitignore` covers all secret-bearing files:
+
+```
+# Secrets and credentials
+.env
+.env.*
+!.env.example
+.envrc
+.envrc.local
+*.pem
+*.key
+credentials.json
+secrets.yaml
+
+# Claude Code local files
+CLAUDE.local.md
+```
+
+`.envrc` and `.envrc.local` (direnv) are treated like `.env` — they may contain or derive secrets (e.g., Keychain lookups). If a project needs a committed `.envrc` for non-secret PATH setup, use `.envrc.local` for the secret overrides and source it from `.envrc`:
 
 ```bash
-# Python (recommended for all projects - it's a generic tool)
-pipx install pre-commit
+# .envrc (committed — no secrets)
+PATH_add bin
+source_env_if_exists .envrc.local
+```
 
-# Verify installation
+```bash
+# .envrc.local (git-ignored — secrets here)
+export API_KEY="$(security find-internet-password -w -s example.com -a user 2>/dev/null)"
+```
+
+### Step 4: Install Hook Framework
+
+**Preferred: lefthook** (fast, no Python dependency, parallel execution):
+
+```bash
+# macOS
+port install lefthook  # or: brew install lefthook
+
+# Verify
+lefthook version
+```
+
+**Alternative: pre-commit** (Python-based, wider ecosystem of third-party hooks):
+
+```bash
+pipx install pre-commit
 pre-commit --version
 ```
 
-### Step 3: Create Configuration
+### Step 5: Create Configuration
 
-Create `.pre-commit-config.yaml` based on technology stack:
+Create hook configuration based on framework choice and technology stack:
 
-#### Elixir Configuration
+#### Lefthook — Elixir Configuration
+
+```yaml
+# .lefthook.yml
+pre-commit:
+  parallel: true
+  commands:
+    gitleaks:
+      run: gitleaks protect --staged --verbose
+    format-elixir:
+      run: mix format --check-formatted
+      glob: "*.{ex,exs}"
+    format-markdown:
+      run: dprint check
+      glob: "*.md"
+
+pre-push:
+  parallel: true
+  commands:
+    compile:
+      run: mix compile --warnings-as-errors
+    credo:
+      run: mix credo --strict
+      glob: "*.{ex,exs}"
+    test:
+      run: mix test --exclude slow --exclude integration
+    dialyzer:
+      run: mix dialyzer
+    deps-audit:
+      run: mix deps.audit
+    hex-audit:
+      run: mix hex.audit
+```
+
+#### Lefthook — Python Configuration
+
+```yaml
+# .lefthook.yml
+pre-commit:
+  parallel: true
+  commands:
+    gitleaks:
+      run: gitleaks protect --staged --verbose
+    ruff-format:
+      run: ruff format --check .
+      glob: "*.py"
+    ruff-check:
+      run: ruff check .
+      glob: "*.py"
+    format-markdown:
+      run: dprint check
+      glob: "*.md"
+
+pre-push:
+  parallel: true
+  commands:
+    mypy:
+      run: mypy .
+    pip-audit:
+      run: pip-audit
+    test:
+      run: pytest -m "not slow and not integration"
+```
+
+#### Lefthook — Multi-Language Configuration (Elixir + Rust NIFs)
+
+```yaml
+# .lefthook.yml
+pre-commit:
+  parallel: true
+  commands:
+    gitleaks:
+      run: gitleaks protect --staged --verbose
+    format-elixir:
+      run: mix format --check-formatted
+      glob: "*.{ex,exs}"
+    format-rust:
+      run: cargo fmt -- --check
+      root: "native/{nif_name}/"
+    format-markdown:
+      run: dprint check
+      glob: "*.md"
+
+pre-push:
+  parallel: true
+  commands:
+    compile:
+      run: mix compile --warnings-as-errors
+    credo:
+      run: mix credo --strict
+    test-elixir:
+      run: mix test
+    dialyzer:
+      run: mix dialyzer
+    clippy:
+      run: cargo clippy -- -D warnings
+      root: "native/{nif_name}/"
+    test-rust:
+      run: cargo test
+      root: "native/{nif_name}/"
+    cargo-audit:
+      run: cargo audit
+      root: "native/{nif_name}/"
+```
+
+#### Alternative: pre-commit Framework — Elixir
 
 ```yaml
 # .pre-commit-config.yaml
 repos:
-  # File hygiene
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
@@ -131,22 +328,16 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-json
-      - id: check-toml
-      - id: check-added-large-files
-        args: ['--maxkb=1000']
       - id: check-merge-conflict
       - id: detect-private-key
 
-  # Secret detection (critical)
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.18.2
     hooks:
       - id: gitleaks
 
-  # Elixir-specific
   - repo: local
     hooks:
-      # Stage 1: Pre-commit (fast)
       - id: mix-format
         name: mix format
         entry: mix format --check-formatted
@@ -154,7 +345,6 @@ repos:
         files: \.exs?$
         pass_filenames: false
 
-      # Stage 2: Pre-push (thorough)
       - id: mix-credo
         name: mix credo
         entry: mix credo --strict
@@ -185,12 +375,11 @@ repos:
         stages: [pre-push]
 ```
 
-#### Python Configuration
+#### Alternative: pre-commit Framework — Python
 
 ```yaml
 # .pre-commit-config.yaml
 repos:
-  # File hygiene
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
@@ -198,33 +387,26 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-json
-      - id: check-toml
-      - id: check-added-large-files
-        args: ['--maxkb=1000']
       - id: check-merge-conflict
       - id: detect-private-key
 
-  # Secret detection (critical)
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.18.2
     hooks:
       - id: gitleaks
 
-  # Python formatting and linting (ruff - fast all-in-one)
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.1.9
     hooks:
-      # Stage 1: Pre-commit (fast)
       - id: ruff
         args: [--fix]
       - id: ruff-format
 
-  # Stage 2: Pre-push (thorough)
   - repo: local
     hooks:
       - id: mypy
         name: mypy
-        entry: uv run mypy .
+        entry: mypy .
         language: system
         types: [python]
         pass_filenames: false
@@ -232,96 +414,34 @@ repos:
 
       - id: pip-audit
         name: pip-audit
-        entry: uv run pip-audit
+        entry: pip-audit
         language: system
         pass_filenames: false
         stages: [pre-push]
 
       - id: pytest-fast
         name: pytest (fast)
-        entry: uv run pytest -m "not slow and not integration"
+        entry: pytest -m "not slow and not integration"
         language: system
         pass_filenames: false
         stages: [pre-push]
 ```
 
-#### TypeScript/Node Configuration
-
-```yaml
-# .pre-commit-config.yaml
-repos:
-  # File hygiene
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
-    hooks:
-      - id: trailing-whitespace
-      - id: end-of-file-fixer
-      - id: check-yaml
-      - id: check-json
-      - id: check-added-large-files
-        args: ['--maxkb=1000']
-      - id: check-merge-conflict
-      - id: detect-private-key
-
-  # Secret detection (critical)
-  - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.18.2
-    hooks:
-      - id: gitleaks
-
-  # Stage 1 & 2 via local hooks
-  - repo: local
-    hooks:
-      # Stage 1: Pre-commit (fast)
-      - id: prettier
-        name: prettier
-        entry: npx prettier --check .
-        language: system
-        pass_filenames: false
-
-      - id: eslint
-        name: eslint
-        entry: npx eslint .
-        language: system
-        pass_filenames: false
-
-      # Stage 2: Pre-push (thorough)
-      - id: typecheck
-        name: typecheck
-        entry: npx tsc --noEmit
-        language: system
-        pass_filenames: false
-        stages: [pre-push]
-
-      - id: npm-audit
-        name: npm audit
-        entry: npm audit --audit-level=moderate
-        language: system
-        pass_filenames: false
-        stages: [pre-push]
-
-      - id: test-fast
-        name: test (fast)
-        entry: npm test -- --testPathIgnorePatterns=integration
-        language: system
-        pass_filenames: false
-        stages: [pre-push]
-```
-
-### Step 4: Install Hooks
+### Step 6: Install Hooks
 
 ```bash
-# Install pre-commit hooks
-pre-commit install
+# lefthook
+lefthook install
 
-# Install pre-push hooks
+# OR pre-commit
+pre-commit install
 pre-commit install --hook-type pre-push
 
 # Verify installation
 ls -la .git/hooks/pre-commit .git/hooks/pre-push
 ```
 
-### Step 5: Optional - Multi-Remote Protection
+### Step 7: Optional - Multi-Remote Protection
 
 If using multi-remote strategy (private origin + public GitHub/GitLab), add protection hook.
 
@@ -351,15 +471,18 @@ for pub_remote in $public_remotes; do
 done
 ```
 
-### Step 6: Initial Run
+### Step 8: Initial Run
 
 ```bash
-# Run against all files to establish baseline
+# lefthook — run all pre-commit hooks
+lefthook run pre-commit
+
+# OR pre-commit — run against all files
 pre-commit run --all-files
 
-# Fix any issues found
-# Then commit the configuration
-git add .pre-commit-config.yaml
+# Fix any issues found, then commit the configuration
+git add .lefthook.yml  # or .pre-commit-config.yaml
+git add .gitleaks.toml .gitleaksignore  # if created
 git commit -m "chore: add pre-commit hooks configuration"
 ```
 
@@ -368,9 +491,11 @@ git commit -m "chore: add pre-commit hooks configuration"
 This skill creates:
 - [ ] `docs/reference/quality-configuration.md` (single source of truth)
 - [ ] `.editorconfig` (editor formatting)
-- [ ] `.pre-commit-config.yaml` (two-stage configuration)
-- [ ] `.git/hooks/pre-commit` (installed by pre-commit)
-- [ ] `.git/hooks/pre-push` (installed by pre-commit)
+- [ ] `.lefthook.yml` or `.pre-commit-config.yaml` (two-stage hook configuration)
+- [ ] `.gitleaks.toml` (project-specific allowlist, if needed)
+- [ ] `.gitleaksignore` (specific false positives, if needed)
+- [ ] `.git/hooks/pre-commit` (installed by hook framework)
+- [ ] `.git/hooks/pre-push` (installed by hook framework)
 - [ ] `.git/hooks/pre-push-remote-check` (optional, for multi-remote)
 
 ## Validation
@@ -379,24 +504,27 @@ Verify successful setup:
 
 ```bash
 # Check hooks are installed
-pre-commit --version
-ls -la .git/hooks/pre-commit
+ls -la .git/hooks/pre-commit .git/hooks/pre-push
 
 # Test Stage 1 (pre-commit)
-pre-commit run --all-files
+lefthook run pre-commit          # or: pre-commit run --all-files
 
 # Test Stage 2 (pre-push)
-pre-commit run --all-files --hook-stage pre-push
+lefthook run pre-push            # or: pre-commit run --all-files --hook-stage pre-push
 
 # Verify timing
-time pre-commit run --all-files  # Should be <30s
-time pre-commit run --all-files --hook-stage pre-push  # Should be <3min
+time lefthook run pre-commit     # Should be <30s
+time lefthook run pre-push       # Should be <3min
 ```
 
 ## Troubleshooting
 
 **Hook not running?**
 ```bash
+# lefthook
+lefthook install
+
+# pre-commit
 pre-commit install --force
 pre-commit install --hook-type pre-push --force
 ```
@@ -407,7 +535,7 @@ git commit --no-verify -m "message"  # Skip pre-commit
 git push --no-verify                  # Skip pre-push
 ```
 
-**Updating hook versions**
+**Updating hook versions (pre-commit only)**
 ```bash
 pre-commit autoupdate
 git add .pre-commit-config.yaml

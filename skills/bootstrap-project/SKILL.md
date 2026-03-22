@@ -77,6 +77,8 @@ features/               # or test/features/ depending on ecosystem
    .env
    .env.*
    !.env.example
+   .envrc
+   .envrc.local
    *.pem
    *.key
    credentials.json

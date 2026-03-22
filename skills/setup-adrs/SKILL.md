@@ -130,44 +130,165 @@ We will use Architecture Decision Records (ADRs) to document significant archite
 
 Create `docs/adr/0002-adopt-development-best-practices.md`:
 
-**Customize based on project type and technology stack.**
+**Scale the detail to the project.** A small CLI tool needs ~100 lines; a multi-subsystem application may need 300-700 lines. Include only sections that apply.
 
-**For Elixir projects**, include:
-- TDD with ExUnit
-- BDD with Cabbage/Cucumber (if applicable)
-- Semantic versioning (0.x.x during development)
-- Gitflow workflow
-- Keep a Changelog
-- C4 DSL architecture
-- Diátaxis documentation
-- Sprint-based development
-- Pre-commit hooks (mix format, mix credo, gitleaks)
-- Dialyzer type checking
+```markdown
+# 2. Adopt Development Best Practices
 
-**For Python projects**, include:
-- TDD with pytest
-- BDD with Behave + Playwright (if applicable)
-- Semantic versioning (0.x.x during development)
-- Gitflow workflow
-- Keep a Changelog
-- C4 DSL architecture
-- Diátaxis documentation
-- Sprint-based development
-- Pre-commit hooks (ruff, mypy, gitleaks)
-- Type hints with mypy
+Date: [YYYY-MM-DD]
 
-**Key Sections** (adapt from CLAUDE.template.md or project ADRs):
-1. Testing Strategy (TDD, BDD if applicable)
-2. Semantic Versioning Strategy
-3. Git Workflow (Gitflow-based)
-4. Change Documentation (Keep a Changelog)
-5. Architecture as Code (C4 DSL)
-6. Sprint-Based Development Lifecycle
-7. Documentation Framework (Diátaxis)
-8. CI/CD and Quality Automation
-9. Conventional Commits
+## Status
 
-**Reference**: Use ragù's ADR-0002 (775 lines) as the comprehensive example, or pasture-management-system's ADR-0002 for detailed sprint procedures.
+Accepted
+
+## Context
+
+[Project name] is a [type] project using [technology stack]. We need consistent development practices that enable high-quality, maintainable code while supporting AI-assisted development workflows.
+
+This project follows [AI-Assisted Project Orchestration patterns](https://github.com/jrjsmrtn/ai-assisted-project-orchestration).
+
+## Decision
+
+### 1. Testing Strategy
+
+- **Framework**: [ecosystem-specific: ExUnit, pytest, cargo test, etc.]
+- **Approach**: TDD — Red-Green-Refactor cycle
+- **Coverage target**: >80% for core logic
+- **Test organization**:
+  - `test/unit/` or `test/[app]/` — unit tests (fast, isolated)
+  - `test/integration/` — integration tests (slower, may require external services)
+
+[For Elixir: add property-based testing with StreamData if applicable]
+[For Elixir: add contract tests if defining behaviours]
+
+### 2. BDD with Gherkin (user-facing projects)
+
+[Include this section for Web, GUI, TUI, CLI projects. Omit for libraries and infrastructure.]
+
+- **Gherkin feature files**: `features/` or `test/features/`
+- **Step definitions**: `features/step_definitions/` or `test/features/step_definitions/`
+- **BDD framework**: [confirm during bootstrap — e.g., Cucumber for Elixir, Behave or pytest-bdd for Python]
+- **Browser automation**: [Playwright for web projects]
+- **Tagging**: `@wip`, `@smoke`, `@slow` for selective execution
+
+### 3. Semantic Versioning
+
+- Follow [SemVer 2.0.0](https://semver.org/)
+- During development: 0.1.x (increment patch per sprint/milestone)
+- No stable 1.0 until [condition: "Phase N complete", "production-ready", etc.]
+- Version location: [where the version is defined in the project]
+
+### 4. Git Workflow
+
+- **Gitflow-based**: `main`, `develop`, `feature/*`, `release/*`, `hotfix/*`
+- **Conventional Commits**: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`
+- `main` tracks releases, `develop` is the integration branch
+
+### 5. Change Documentation
+
+- **Keep a Changelog** format in `CHANGELOG.md`
+- Categories: Added, Changed, Deprecated, Removed, Fixed, Security
+- Updated with each version bump
+
+### 6. Architecture as Code
+
+- **C4 DSL** models in `docs/architecture/`
+- Validated with structurizr/cli container
+- Rendered with structurizr/lite for review
+
+### 7. Documentation Framework
+
+**Diátaxis** structure in `docs/`:
+- `tutorials/` — learning-oriented
+- `howto/` — problem-oriented
+- `reference/` — information-oriented
+- `explanation/` — understanding-oriented
+
+ADRs in `docs/adr/`, sprint plans in `docs/sprints/`, roadmap in `docs/roadmap/`.
+
+### 8. Sprint-Based Development
+
+- Lightweight sprints aligned with roadmap phases
+- Sprint plans in `docs/sprints/sprint-NNNN-plan.md`
+- Retrospectives in `docs/sprints/sprint-NNNN-retrospective.md` (or `.yml`)
+- Roadmap in `docs/roadmap/roadmap.md`
+
+### 9. Formatting and Editor Configuration
+
+- **Editor configuration**: `.editorconfig` for consistent whitespace across editors
+- **Markdown formatting**: dprint (preferred) or prettier
+- **Code formatting**: [ecosystem-specific: mix format, ruff format, cargo fmt, etc.]
+
+### 10. Quality Automation
+
+**Git hooks** — lefthook (preferred) or pre-commit framework:
+
+**Pre-commit** (fast, <30s):
+- Code formatting check
+- Markdown formatting check (dprint)
+- Secret scanning (gitleaks)
+
+**Pre-push** (thorough):
+- Linting / static analysis ([mix credo, ruff check, eslint, etc.])
+- Type checking ([Dialyzer, mypy, tsc, etc.])
+- Dependency scanning ([mix deps.audit, pip-audit, npm audit, cargo audit, etc.])
+- Fast tests (exclude slow/integration)
+
+**CI** should run all pre-commit + pre-push checks, plus integration tests and coverage.
+
+### 11. Licensing and Copyright
+
+- **REUSE compliance** ([reuse.software](https://reuse.software/)) for machine-readable copyright and license declarations
+- SPDX headers (`SPDX-FileCopyrightText`, `SPDX-License-Identifier`) on source files
+- License texts in `LICENSES/` directory
+
+### 12. Code Conventions
+
+[Project-specific patterns that AI and human contributors should follow. Examples:]
+- [Struct definition ordering, validation patterns, error handling conventions]
+- [Test addresses: RFC 5737 for IPs, RFC 7042 for MACs, RFC 2606 for domains]
+- [Naming conventions, module organization]
+
+[Omit this section if no project-specific conventions exist yet.]
+
+## Consequences
+
+**Positive**:
+- Consistent practices across development sessions
+- AI assistants have clear guidance on standards
+- Quality gates catch issues early
+- Automated enforcement reduces review burden
+
+**Negative**:
+- Initial setup overhead for tooling
+- [Ecosystem-specific: Dialyzer PLT build time, mypy strictness ramp-up, etc.]
+
+## References
+
+- [AI-Assisted Project Orchestration](https://github.com/jrjsmrtn/ai-assisted-project-orchestration)
+- [Ecosystem-specific documentation links]
+```
+
+**Ecosystem-specific guidance** (confirm choices during project bootstrap):
+
+For **Elixir** projects, expand sections with:
+- ExUnit + StreamData (property-based testing)
+- BDD with Cucumber + Playwright (if user-facing)
+- usage_rules for Ash-based projects (AI documentation lookup)
+- mix format, mix credo --strict, Dialyzer
+- JUnit XML test reports
+
+For **Python** projects, expand sections with:
+- pytest + pytest-asyncio
+- BDD with Behave or pytest-bdd + Playwright (if user-facing)
+- ruff (format + lint), mypy (strict mode)
+
+For **Rust** projects, expand sections with:
+- cargo test + proptest (property-based)
+- cargo fmt, cargo clippy
+
+For mature/security-sensitive projects, add:
+- Supply Chain Security (SLSA, EEF Ægis, OpenSSF)
 
 ### ADR-0003: Technology Stack Decision
 
