@@ -34,7 +34,7 @@ Before running this skill, verify:
 Read the sprint plan to understand what was committed:
 
 ```bash
-cat docs/sprints/sprint-NN-plan.md
+cat docs/sprints/sprint-NNNN-plan.md
 ```
 
 Identify:
@@ -53,7 +53,7 @@ Two formats are available. Choose based on sprint complexity:
 - **Minimal** — for routine sprints, single-feature sprints, or sprints without notable issues (default)
 - **Expanded** — for integration work, multi-sprint efforts, or sprints with notable challenges
 
-Create `docs/sprints/sprint-NN-retrospective.md` (markdown) or `sprint-NN-retrospective.yml` (YAML):
+Create `docs/sprints/sprint-NNNN-retrospective.md` (markdown) or `sprint-NNNN-retrospective.yml` (YAML):
 
 #### Minimal Format (Markdown)
 
@@ -192,8 +192,8 @@ Update the "Current Development Status" section:
 ### Step 9: Create Sprint Wrap-up Commit
 
 ```bash
-git add docs/sprints/sprint-NN-plan.md
-git add docs/sprints/sprint-NN-retrospective.md  # or .yml
+git add docs/sprints/sprint-NNNN-plan.md
+git add docs/sprints/sprint-NNNN-retrospective.md  # or .yml
 git add docs/sprints/README.md
 git add docs/roadmap/roadmap.md
 git add CHANGELOG.md
@@ -225,8 +225,8 @@ Suggest running `plan-sprint` skill to create Sprint N+1 plan.
 ## Outputs
 
 This skill creates/updates:
-- [ ] `docs/sprints/sprint-NN-plan.md` (status updated)
-- [ ] `docs/sprints/sprint-NN-retrospective.md` (or `.yml`)
+- [ ] `docs/sprints/sprint-NNNN-plan.md` (status updated)
+- [ ] `docs/sprints/sprint-NNNN-retrospective.md` (or `.yml`)
 - [ ] `docs/sprints/README.md` (status update)
 - [ ] `docs/roadmap/roadmap.md` (milestones and sprint history updated)
 - [ ] `CHANGELOG.md` (new version section)
@@ -247,7 +247,7 @@ grep "## \[0.1.x\]" CHANGELOG.md
 git tag -l "v0.1.x"
 
 # Verify retrospective exists
-ls docs/sprints/sprint-NN-retrospective.*
+ls docs/sprints/sprint-NNNN-retrospective.*
 ```
 
 ## Related Skills

@@ -56,7 +56,7 @@ Two formats are available. Choose based on project type:
 
 ### Step 3: Create Sprint Plan
 
-Create `docs/sprints/sprint-NN-plan.md` (zero-padded number):
+Create `docs/sprints/sprint-NNNN-plan.md` (4-digit zero-padded, e.g., `sprint-0001-plan.md`):
 
 #### Minimal Format
 
@@ -183,7 +183,7 @@ Update the "Current Development Status" section:
 ```markdown
 ## Current Development Status
 
-- **Current Sprint**: Sprint [N] (see docs/sprints/sprint-[NN]-plan.md)
+- **Current Sprint**: Sprint [N] (see docs/sprints/sprint-[NNNN]-plan.md)
 - **Sprint Goal**: [Sprint goal]
 - **Next Milestone**: v0.1.x
 ```
@@ -203,14 +203,14 @@ Create or update `docs/sprints/README.md`:
 
 | Sprint | Phase | Version | Status | Plan | Retrospective |
 |--------|-------|---------|--------|------|---------------|
-| [N] | [Phase] | v0.1.x | In Progress | [Plan](sprint-NN-plan.md) | - |
-| [N-1] | [Phase] | v0.1.y | Complete | [Plan](sprint-MM-plan.md) | [Retro](sprint-MM-retrospective.md) |
+| [N] | [Phase] | v0.1.x | In Progress | [Plan](sprint-NNNN-plan.md) | - |
+| [N-1] | [Phase] | v0.1.y | Complete | [Plan](sprint-MMMM-plan.md) | [Retro](sprint-MMMM-retrospective.md) |
 ```
 
 ### Step 6: Commit Sprint Plan
 
 ```bash
-git add docs/sprints/sprint-NN-plan.md
+git add docs/sprints/sprint-NNNN-plan.md
 git add docs/sprints/README.md
 git add CLAUDE.md
 
@@ -227,7 +227,7 @@ git commit -m "docs: add Sprint N plan (v0.1.x)"
 ## Outputs
 
 This skill creates:
-- [ ] `docs/sprints/sprint-NN-plan.md`
+- [ ] `docs/sprints/sprint-NNNN-plan.md`
 - [ ] Updated `docs/sprints/README.md`
 - [ ] Updated `CLAUDE.md` (current sprint reference)
 - [ ] Git commit: `docs: add Sprint N plan`
@@ -236,7 +236,7 @@ This skill creates:
 
 ```bash
 # Verify sprint plan exists
-ls docs/sprints/sprint-NN-plan.md
+ls docs/sprints/sprint-NNNN-plan.md
 
 # Verify CLAUDE.md updated
 grep "Current Sprint" CLAUDE.md

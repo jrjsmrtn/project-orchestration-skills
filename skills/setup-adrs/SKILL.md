@@ -33,9 +33,9 @@ Every project should have these foundational ADRs:
 | ADR-0001 | HOW TO DECIDE | Decision methodology | All projects |
 | ADR-0002 | HOW TO DEVELOP | Development practices | All projects |
 | ADR-0003 | WHAT TECH | Technology stack | All projects |
-| ADR-0004 | HOW TO OPERATE | Operations practices | Infrastructure, Hybrid |
+| ADR-0004 | HOW TO OPERATE | Operations practices | Infrastructure, Hybrid (optional) |
 
-**Note**: ADR-0004 is lightweight for pure development projects but comprehensive for infrastructure projects.
+**Note**: ADR-0004 is only needed for Infrastructure and Hybrid projects. Skip it for pure development projects (libraries, CLI tools, web apps without self-hosting concerns).
 
 ### Audience Traceability
 
@@ -61,8 +61,8 @@ ls docs/adr/*.md 2>/dev/null | grep -E '[0-9]{4}-' | sort -V | tail -1
 # If no ADRs exist, start with 0001
 ```
 
-**Format**: `NNNN-title-with-hyphens.md` (e.g., `0001-record-architecture-decisions.md`)
-**Internal Title**: `# ADR-NNNN: Title` (e.g., `# ADR-0001: Record Architecture Decisions`)
+**Filename**: `NNNN-title-with-hyphens.md` (e.g., `0001-record-architecture-decisions.md`)
+**Title**: `# N. Title` using adr-tools format (e.g., `# 1. Record Architecture Decisions`). This format is required for Structurizr `!adrs` integration.
 
 ## Workflow
 
@@ -71,7 +71,7 @@ ls docs/adr/*.md 2>/dev/null | grep -E '[0-9]{4}-' | sort -V | tail -1
 Create `docs/adr/0001-record-architecture-decisions.md`:
 
 ```markdown
-# ADR-0001: Record Architecture Decisions
+# 1. Record Architecture Decisions
 
 Date: [YYYY-MM-DD]
 
@@ -174,7 +174,7 @@ Create `docs/adr/0002-adopt-development-best-practices.md`:
 Create `docs/adr/0003-[technology-stack-name].md`:
 
 ```markdown
-# ADR-0003: Use [Technology Stack]
+# 3. Use [Technology Stack]
 
 Date: [YYYY-MM-DD]
 
@@ -235,17 +235,18 @@ We will use [Technology Stack] for [project name].
 - [Comparison articles if applicable]
 ```
 
-### ADR-0004: Operations Best Practices
+### ADR-0004: Operations Best Practices (Optional)
+
+**Skip for pure development projects.** Only create for Infrastructure or Hybrid projects.
 
 Create `docs/adr/0004-operations-best-practices.md`:
 
 **Scope varies by project type:**
-- **Development projects**: Lightweight (deployment, monitoring basics)
-- **Infrastructure projects**: Comprehensive (full operational practices)
+- **Infrastructure projects**: Comprehensive (backup, monitoring, change management)
 - **Hybrid projects**: Moderate depth based on operational complexity
 
 ```markdown
-# ADR-0004: Operations Best Practices
+# 4. Operations Best Practices
 
 Date: [YYYY-MM-DD]
 
@@ -377,7 +378,7 @@ This skill creates:
 - [ ] `docs/adr/0001-record-architecture-decisions.md` (HOW TO DECIDE)
 - [ ] `docs/adr/0002-adopt-development-best-practices.md` (HOW TO DEVELOP)
 - [ ] `docs/adr/0003-[technology-stack].md` (WHAT TECH)
-- [ ] `docs/adr/0004-operations-best-practices.md` (HOW TO OPERATE)
+- [ ] `docs/adr/0004-operations-best-practices.md` (HOW TO OPERATE — Infrastructure/Hybrid only)
 
 ## Validation
 
@@ -385,7 +386,7 @@ Verify successful ADR creation:
 1. All four foundational ADRs exist with correct numbering
 2. ADR-0002 is customized for the project's technology stack
 3. ADR-0003 includes alternatives considered and rationale
-4. ADR-0004 scope matches project type (comprehensive for infrastructure)
+4. ADR-0004 exists only for Infrastructure/Hybrid projects
 5. README.md index is accurate
 6. Dates are correct (use `date +%Y-%m-%d`)
 

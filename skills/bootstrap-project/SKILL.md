@@ -31,9 +31,9 @@ Before running this skill, gather from the user:
 7. **Git remotes** (private origin only, or multi-remote with public GitHub/GitLab)
 
 **Why project category matters:**
-- **Development**: ADR-0004 (Operations) is lightweight
-- **Infrastructure**: ADR-0004 is comprehensive (backup, monitoring, change management)
-- **Hybrid**: ADR-0004 covers both application and infrastructure operations
+- **Development**: ADR-0004 (Operations) is skipped
+- **Infrastructure**: ADR-0004 is created (backup, monitoring, change management)
+- **Hybrid**: ADR-0004 is created, covering both application and infrastructure operations
 
 ## Workflow
 
@@ -108,7 +108,7 @@ Generate a project-specific CLAUDE.md with:
 
 ## Current Development Status
 
-- **Current Sprint**: Sprint 1 (see docs/sprints/sprint-01-plan.md)
+- **Current Sprint**: Sprint 1 (see docs/sprints/sprint-0001-plan.md)
 - **Sprint Goal**: [initial goal]
 - **Status**: Not started
 - **Next Milestone**: v0.1.0
@@ -122,7 +122,7 @@ Read these at the start of each AI session for complete context:
 | [ADR-0001](docs/adr/0001-record-architecture-decisions.md) | HOW TO DECIDE | Decision methodology |
 | [ADR-0002](docs/adr/0002-adopt-development-best-practices.md) | HOW TO DEVELOP | Development practices |
 | [ADR-0003](docs/adr/0003-*.md) | WHAT TECH | Technology stack |
-| [ADR-0004](docs/adr/0004-operations-best-practices.md) | HOW TO OPERATE | Operations practices |
+| [ADR-0004](docs/adr/0004-operations-best-practices.md) | HOW TO OPERATE | Operations practices (Infrastructure/Hybrid only) |
 
 ## Development Practices
 
@@ -291,7 +291,7 @@ title: Getting Started
 
 After completing the bootstrap, suggest invoking:
 
-1. **setup-adrs** - Create ADR-0001, 0002, 0003, 0004
+1. **setup-adrs** - Create ADR-0001, 0002, 0003 (and 0004 for Infrastructure/Hybrid)
 2. **setup-pre-commit** - Configure quality gates
 3. **setup-architecture-as-code** - Create architecture model (C4/Structurizr)
 4. **plan-sprint** - Create Sprint 1 plan
