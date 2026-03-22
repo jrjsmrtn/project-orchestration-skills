@@ -9,7 +9,7 @@
       "name": "ai-assisted-project-orchestration",
       "source": {
         "source": "url",
-        "url": "https://github.com/jrjsmrtn/ai-assisted-project-orchestration-skills.git"
+        "url": "git@github.com:jrjsmrtn/ai-assisted-project-orchestration-skills.git"
       }
     }
   ]
