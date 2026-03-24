@@ -1,15 +1,15 @@
 {
-  "name": "ai-assisted-project-orchestration-skills",
+  "name": "project-orchestration-skills",
   "owner": {
     "name": "Georges Martin",
     "email": "jrjsmrtn@gmail.com"
   },
   "plugins": [
     {
-      "name": "ai-assisted-project-orchestration",
+      "name": "project-orchestration-skills",
       "source": {
         "source": "url",
-        "url": "git@github.com:jrjsmrtn/ai-assisted-project-orchestration-skills.git"
+        "url": "git@github.com:jrjsmrtn/project-orchestration-skills.git"
       }
     }
   ]

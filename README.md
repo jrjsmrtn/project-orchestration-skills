@@ -7,7 +7,7 @@ A Claude Code plugin providing skills for AI-assisted project orchestration, fol
 ### Direct Installation
 
 ```
-/plugin install github:jrjsmrtn/ai-assisted-project-orchestration-skills
+/plugin install github:jrjsmrtn/project-orchestration-skills
 ```
 
 ### Via Project Settings
@@ -17,7 +17,7 @@ Add to your project's `.claude/settings.json`:
 ```json
 {
   "plugins": [
-    "github:jrjsmrtn/ai-assisted-project-orchestration-skills"
+    "github:jrjsmrtn/project-orchestration-skills"
   ]
 }
 ```

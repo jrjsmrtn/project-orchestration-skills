@@ -1,12 +1,12 @@
 {
-  "name": "ai-assisted-project-orchestration",
-  "version": "0.1.3",
+  "name": "project-orchestration-skills",
+  "version": "0.1.4",
   "description": "Skills for AI-assisted project orchestration following best practices for software development lifecycle, architecture documentation, and quality automation",
   "author": {
     "name": "Georges Martin",
     "email": "jrjsmrtn@gmail.com"
   },
-  "repository": "https://github.com/jrjsmrtn/ai-assisted-project-orchestration-skills",
+  "repository": "https://github.com/jrjsmrtn/project-orchestration-skills",
   "keywords": [
     "project-orchestration",
     "agile",

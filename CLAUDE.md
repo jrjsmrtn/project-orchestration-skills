@@ -65,4 +65,4 @@ Or via the marketplace.json for private git installation.
 ## Remotes
 
 - origin: private git server
-- github: https://github.com/jrjsmrtn/ai-assisted-project-orchestration-skills
+- github: https://github.com/jrjsmrtn/project-orchestration-skills
