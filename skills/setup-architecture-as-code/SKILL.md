@@ -62,8 +62,15 @@ The C4 model provides four levels of abstraction (zoom levels):
 ### Step 1: Create Directory Structure
 
 ```bash
-mkdir -p architecture
+mkdir -p architecture/shared
+mkdir -p docs/architecture    # Structurizr-specific docs (h2-first, numbered files)
+# Symlink so !adrs and !docs directives can reach docs/ from architecture/
+ln -s ../docs architecture/docs
 ```
+
+The symlink is required because Structurizr restricts `!adrs` and `!docs` paths to the same directory or subdirectories of the DSL file — it cannot traverse parent directories.
+
+**Why `docs/architecture/` and not `docs/explanation/`?** Structurizr silently strips h1 headings (it auto-generates h1 from the element name). Diátaxis docs use h1 as their title, so pointing `!docs` at a Diátaxis directory would lose those titles. Keep Structurizr docs in a dedicated directory with h2-first files.
 
 ### Step 2: Create Workspace File
 
@@ -73,6 +80,8 @@ Create `architecture/workspace.dsl`:
 workspace "[Project Name]" "[Brief description]" {
 
     !identifiers hierarchical
+    !adrs docs/adr
+    !docs docs/architecture
 
     model {
         # ===== USERS/ACTORS =====
@@ -197,6 +206,8 @@ workspace "[Project Name]" "[Brief description]" {
 workspace "[Project Name]" "Elixir/Phoenix application" {
 
     !identifiers hierarchical
+    !adrs docs/adr
+    !docs docs/architecture
 
     model {
         user = person "User" "Application user" "User"
@@ -264,6 +275,8 @@ workspace "[Project Name]" "Elixir/Phoenix application" {
 workspace "[Project Name]" "Python FastAPI application" {
 
     !identifiers hierarchical
+    !adrs docs/adr
+    !docs docs/architecture
 
     model {
         user = person "User" "API consumer" "User"
@@ -345,9 +358,14 @@ This project uses **Architecture-as-Code**: architecture models defined in text 
 ```
 architecture/
 ├── workspace.dsl       # C4 model definition (THE source of truth)
+├── shared/             # Shared DSL fragments (!include targets)
+│   └── _styles.dsl     # Unified element/relationship styles
+├── docs -> ../docs     # Symlink (enables !adrs and !docs directives)
 ├── README.md           # This file
 └── diagrams/           # Generated exports (optional, gitignored)
 ```
+
+The `docs` symlink allows workspace files to use `!adrs docs/adr` and `!docs docs/architecture` — Structurizr requires these paths to be within or below the DSL file's directory.
 
 ## Quick Start
 
@@ -358,7 +376,8 @@ architecture/
 make view-architecture
 # or:
 podman run --rm -p 8080:8080 \
-  -v "$(pwd)/architecture:/usr/local/structurizr" \
+  -v "$(pwd):/usr/local/structurizr" \
+  -e STRUCTURIZR_WORKSPACE_PATH=architecture \
   structurizr/lite
 ```
 
@@ -370,7 +389,8 @@ Then open http://localhost:8080
 make validate-architecture
 # or:
 podman run --rm \
-  -v "$(pwd)/architecture:/usr/local/structurizr" \
+  -v "$(pwd):/usr/local/structurizr" \
+  -w /usr/local/structurizr/architecture \
   structurizr/cli validate -workspace workspace.dsl
 ```
 
@@ -426,26 +446,30 @@ Add to project `Makefile`:
 validate-architecture:
 	@echo "Validating architecture model..."
 	podman run --rm \
-		-v "$(PWD)/architecture:/usr/local/structurizr" \
+		-v "$(PWD):/usr/local/structurizr" \
+		-w /usr/local/structurizr/architecture \
 		structurizr/cli validate -workspace workspace.dsl
 
 view-architecture:
 	@echo "Starting Structurizr Lite on http://localhost:8080..."
 	@echo "Press Ctrl+C to stop"
 	podman run --rm -p 8080:8080 \
-		-v "$(PWD)/architecture:/usr/local/structurizr" \
+		-v "$(PWD):/usr/local/structurizr" \
+		-e STRUCTURIZR_WORKSPACE_PATH=architecture \
 		structurizr/lite
 
 export-architecture:
 	@echo "Exporting architecture to PlantUML..."
 	podman run --rm \
-		-v "$(PWD)/architecture:/usr/local/structurizr" \
+		-v "$(PWD):/usr/local/structurizr" \
+		-w /usr/local/structurizr/architecture \
 		structurizr/cli export -workspace workspace.dsl -format plantuml -output diagrams/
 
 export-architecture-json:
 	@echo "Exporting architecture to JSON..."
 	podman run --rm \
-		-v "$(PWD)/architecture:/usr/local/structurizr" \
+		-v "$(PWD):/usr/local/structurizr" \
+		-w /usr/local/structurizr/architecture \
 		structurizr/cli export -workspace workspace.dsl -format json
 ```
 
@@ -455,7 +479,8 @@ export-architecture-json:
 # Validate the model
 make validate-architecture
 # or manually:
-podman run --rm -v "$(pwd)/architecture:/usr/local/structurizr" \
+podman run --rm -v "$(pwd):/usr/local/structurizr" \
+  -w /usr/local/structurizr/architecture \
   structurizr/cli validate -workspace workspace.dsl
 
 # View to verify (optional)
@@ -470,7 +495,9 @@ git commit -m "docs: add architecture-as-code model (C4/Structurizr)"
 ## Outputs
 
 This skill creates:
-- [ ] `architecture/workspace.dsl` (C4 model - single source of truth)
+- [ ] `architecture/workspace.dsl` (C4 model with `!adrs` and `!docs` integration)
+- [ ] `architecture/docs` symlink to `../docs` (enables Structurizr documentation directives)
+- [ ] `architecture/shared/` directory (for shared DSL fragments like `_styles.dsl`)
 - [ ] `architecture/README.md` (architecture-as-code documentation)
 - [ ] Makefile targets (validate-architecture, view-architecture, export-architecture)
 
@@ -549,6 +576,30 @@ Architecture-as-Code is particularly AI-friendly:
 - Major architectural decisions
 - Strategic technology choices
 - Validation of business alignment
+
+## Growing to Multiple Workspaces
+
+When a single workspace.dsl grows too large, split into focused workspaces per subsystem:
+
+```
+architecture/
+├── workspace.dsl                    # Master — all subsystems at container level
+├── <name>-<subsystem>-workspace.dsl # Focused — one subsystem at component level
+├── shared/
+│   └── _styles.dsl                  # Unified styles shared via !include
+├── docs -> ../docs
+└── README.md
+```
+
+Each focused workspace:
+- Promotes its subsystem to a top-level softwareSystem with full container/component detail
+- Declares other subsystems as one-line "Sibling" stubs with context-specific descriptions
+- Repeats `!adrs docs/adr` and `!docs docs/architecture` (these are per-workspace, not inherited)
+- Uses `styles { !include shared/_styles.dsl }` for style consistency
+
+**Why not share sibling stubs or people via `!include`?** Structurizr errors on duplicate identifiers (no merge, no override). Each focused workspace defines its primary system with the same identifier as the stub would use. Also, descriptions are intentionally context-specific — a sibling description explains how that subsystem relates to *this* workspace's focus.
+
+**Podman note**: mount the project root (not just `architecture/`) so the `docs` symlink resolves inside the container.
 
 ## Related Skills
 

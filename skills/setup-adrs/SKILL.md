@@ -453,49 +453,43 @@ monitoring, and incident response.
 - [Runbooks](../howto/) - Operational procedures
 ```
 
-### ADR Index (README.md)
+### ADR Index
 
-Create `docs/adr/README.md`:
+Create `docs/adr/index.yml` — YAML is safe inside the ADR directory because Structurizr's `!adrs` importer only processes `*.md` files:
 
-```markdown
-# Architecture Decision Records
+```yaml
+# Architecture Decision Records — [Project Name]
 
-This directory contains Architecture Decision Records (ADRs) for [Project Name].
-
-## Foundational ADRs
-
-| ADR | Title | Purpose | Status |
-|-----|-------|---------|--------|
-| [ADR-0001](0001-record-architecture-decisions.md) | Record Architecture Decisions | HOW TO DECIDE | Accepted |
-| [ADR-0002](0002-adopt-development-best-practices.md) | Adopt Development Best Practices | HOW TO DEVELOP | Accepted |
-| [ADR-0003](0003-[tech-stack].md) | Use [Technology Stack] | WHAT TECH | Accepted |
-| [ADR-0004](0004-operations-best-practices.md) | Operations Best Practices | HOW TO OPERATE | Accepted |
-
-## Project-Specific ADRs
-
-| ADR | Title | Status | Date |
-|-----|-------|--------|------|
-| ... | ... | ... | ... |
-
-## ADR Process
-
-1. Check highest ADR number: `ls docs/adr/*.md | sort -V | tail -1`
-2. Create new ADR with next sequential number
-3. Write ADR with Status: Proposed
-4. Review with team/stakeholders
-5. Update Status to Accepted (or Rejected)
-6. Update this index
-
-## References
-
-- [ADR-0001](0001-record-architecture-decisions.md) defines our ADR process
-- [Documenting Architecture Decisions](https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions)
+foundational:
+  - id: 1
+    file: 0001-record-architecture-decisions.md
+    title: Record Architecture Decisions
+    purpose: HOW TO DECIDE
+    status: Accepted
+  - id: 2
+    file: 0002-adopt-development-best-practices.md
+    title: Adopt Development Best Practices
+    purpose: HOW TO DEVELOP
+    status: Accepted
+  - id: 3
+    file: 0003-[tech-stack].md
+    title: "Use [Technology Stack]"
+    purpose: WHAT TECH
+    status: Accepted
+  # ADR-0004 only for Infrastructure/Hybrid projects:
+  # - id: 4
+  #   file: 0004-operations-best-practices.md
+  #   title: Operations Best Practices
+  #   purpose: HOW TO OPERATE
+  #   status: Accepted
 ```
+
+**Do not create a README.md inside `docs/adr/`** — the adrtools importer parses every `.md` file and will fail on non-ADR markdown files.
 
 ## Outputs
 
 This skill creates:
-- [ ] `docs/adr/README.md` (ADR index)
+- [ ] `docs/adr/index.yml` (ADR index — YAML is safe inside adr/, only *.md is parsed by !adrs)
 - [ ] `docs/adr/0001-record-architecture-decisions.md` (HOW TO DECIDE)
 - [ ] `docs/adr/0002-adopt-development-best-practices.md` (HOW TO DEVELOP)
 - [ ] `docs/adr/0003-[technology-stack].md` (WHAT TECH)

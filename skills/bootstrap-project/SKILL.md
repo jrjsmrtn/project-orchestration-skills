@@ -45,7 +45,7 @@ Create the Diátaxis documentation structure:
 docs/
 ├── tutorials/           # Learning-oriented
 │   └── .gitkeep
-├── howto/              # Problem-oriented (or how-to/)
+├── howto/              # Problem-oriented
 │   └── .gitkeep
 ├── reference/          # Information-oriented
 │   └── .gitkeep
@@ -53,7 +53,7 @@ docs/
 │   └── .gitkeep
 ├── adr/                # Architecture Decision Records
 │   └── .gitkeep
-├── architecture/       # C4 DSL models
+├── architecture/       # Structurizr-specific docs (h2-first, for !docs directive)
 │   └── .gitkeep
 ├── sprints/            # Sprint planning and tracking
 │   └── .gitkeep
@@ -295,7 +295,7 @@ After completing the bootstrap, suggest invoking:
 
 1. **setup-adrs** - Create ADR-0001, 0002, 0003 (and 0004 for Infrastructure/Hybrid)
 2. **setup-pre-commit** - Configure quality gates
-3. **setup-architecture-as-code** - Create architecture model (C4/Structurizr)
+3. **setup-architecture-as-code** - Create `architecture/` directory, workspace.dsl, and docs symlink
 4. **plan-sprint** - Create Sprint 1 plan
 
 ## Outputs
