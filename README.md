@@ -1,25 +1,16 @@
+<!-- SPDX-FileCopyrightText: 2025 Georges Martin <jrjsmrtn@gmail.com> -->
+<!-- SPDX-License-Identifier: MIT -->
+
 # AI-Assisted Project Orchestration Skills
 
 A Claude Code plugin providing skills for AI-assisted project orchestration, following best practices for software development lifecycle, architecture documentation, and quality automation.
 
 ## Installation
 
-### Direct Installation
+Install via the [jrjsmrtn-skills](https://github.com/jrjsmrtn/jrjsmrtn-skills) marketplace:
 
 ```
-/plugin install github:jrjsmrtn/project-orchestration-skills
-```
-
-### Via Project Settings
-
-Add to your project's `.claude/settings.json`:
-
-```json
-{
-  "plugins": [
-    "github:jrjsmrtn/project-orchestration-skills"
-  ]
-}
+/plugin install github:jrjsmrtn/jrjsmrtn-skills
 ```
 
 ## Included Skills
