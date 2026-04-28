@@ -7,7 +7,6 @@ Claude Code plugin providing 8 skills for AI-assisted project orchestration.
 ```
 .claude-plugin/
   plugin.json          # Plugin manifest (name, version, description, keywords)
-  marketplace.json     # Marketplace listing for private git installation
 skills/
   <skill-name>/
     SKILL.md           # Skill definition (frontmatter + markdown body)
@@ -52,15 +51,9 @@ description: <one-line description>. <when-to-use sentences>.
 - Skills are designed to run in the target project's working directory, not in this plugin repo
 - The plugin is extracted from the [AI-Assisted Project Orchestration](https://github.com/jrjsmrtn/ai-assisted-project-orchestration) pattern language project
 
-## Testing
+## Installation
 
-Install locally for testing:
-
-```
-/plugin install /Users/gm/Projects/project-orchestration-skills
-```
-
-Or via the marketplace.json for private git installation.
+Installation requires a marketplace — install via [jrjsmrtn-skills](https://github.com/jrjsmrtn/jrjsmrtn-skills).
 
 ## Remotes
 

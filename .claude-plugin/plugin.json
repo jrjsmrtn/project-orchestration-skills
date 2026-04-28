@@ -1,6 +1,6 @@
 {
   "name": "project-orchestration-skills",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Skills for AI-assisted project orchestration following best practices for software development lifecycle, architecture documentation, and quality automation",
   "author": {
     "name": "Georges Martin",
