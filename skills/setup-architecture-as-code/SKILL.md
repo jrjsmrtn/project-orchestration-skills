@@ -32,8 +32,8 @@ Architecture-as-Code treats architecture documentation like source code:
 **Implementation Stack**:
 - **Modeling Approach**: C4 Model (Context, Container, Component, Code)
 - **Definition Language**: Structurizr DSL
-- **Validation**: structurizr/cli
-- **Visualization**: Structurizr Lite (local) or Structurizr Cloud
+- **Validation & Inspection**: structurizr/structurizr (consolidated image, replaces deprecated `structurizr/cli` and `structurizr/lite`)
+- **Visualization**: structurizr/structurizr `local` subcommand or Structurizr Cloud
 
 ## Required Inputs
 
@@ -372,13 +372,12 @@ The `docs` symlink allows workspace files to use `!adrs docs/adr` and `!docs doc
 ### View the Architecture
 
 ```bash
-# Start Structurizr Lite viewer
+# Start the local viewer (replaces Structurizr Lite)
 make view-architecture
 # or:
 podman run --rm -p 8080:8080 \
-  -v "$(pwd):/usr/local/structurizr" \
-  -e STRUCTURIZR_WORKSPACE_PATH=architecture \
-  structurizr/lite
+  -v "$(pwd)/architecture:/usr/local/structurizr" \
+  structurizr/structurizr local
 ```
 
 Then open http://localhost:8080
@@ -391,7 +390,7 @@ make validate-architecture
 podman run --rm \
   -v "$(pwd):/usr/local/structurizr" \
   -w /usr/local/structurizr/architecture \
-  structurizr/cli validate -workspace workspace.dsl
+  structurizr/structurizr validate -workspace workspace.dsl
 ```
 
 ### Export Diagrams
@@ -401,7 +400,7 @@ make export-architecture
 # or:
 podman run --rm \
   -v "$(pwd)/architecture:/usr/local/structurizr" \
-  structurizr/cli export -workspace workspace.dsl -format plantuml
+  structurizr/structurizr export -workspace workspace.dsl -format plantuml
 ```
 
 ## C4 Model Levels
@@ -441,36 +440,42 @@ Add to project `Makefile`:
 
 ```makefile
 # Architecture-as-Code targets
-.PHONY: validate-architecture view-architecture export-architecture
+.PHONY: validate-architecture inspect-architecture view-architecture export-architecture
 
 validate-architecture:
 	@echo "Validating architecture model..."
 	podman run --rm \
 		-v "$(PWD):/usr/local/structurizr" \
 		-w /usr/local/structurizr/architecture \
-		structurizr/cli validate -workspace workspace.dsl
+		structurizr/structurizr validate -workspace workspace.dsl
+
+inspect-architecture:
+	@echo "Inspecting architecture model (Checkstyle-style rules)..."
+	podman run --rm \
+		-v "$(PWD):/usr/local/structurizr" \
+		-w /usr/local/structurizr/architecture \
+		structurizr/structurizr inspect -workspace workspace.dsl -severity error,warning
 
 view-architecture:
-	@echo "Starting Structurizr Lite on http://localhost:8080..."
+	@echo "Starting Structurizr local viewer on http://localhost:8080..."
 	@echo "Press Ctrl+C to stop"
 	podman run --rm -p 8080:8080 \
-		-v "$(PWD):/usr/local/structurizr" \
-		-e STRUCTURIZR_WORKSPACE_PATH=architecture \
-		structurizr/lite
+		-v "$(PWD)/architecture:/usr/local/structurizr" \
+		structurizr/structurizr local
 
 export-architecture:
 	@echo "Exporting architecture to PlantUML..."
 	podman run --rm \
 		-v "$(PWD):/usr/local/structurizr" \
 		-w /usr/local/structurizr/architecture \
-		structurizr/cli export -workspace workspace.dsl -format plantuml -output diagrams/
+		structurizr/structurizr export -workspace workspace.dsl -format plantuml -output diagrams/
 
 export-architecture-json:
 	@echo "Exporting architecture to JSON..."
 	podman run --rm \
 		-v "$(PWD):/usr/local/structurizr" \
 		-w /usr/local/structurizr/architecture \
-		structurizr/cli export -workspace workspace.dsl -format json
+		structurizr/structurizr export -workspace workspace.dsl -format json
 ```
 
 ### Step 6: Validate and Commit
@@ -481,7 +486,7 @@ make validate-architecture
 # or manually:
 podman run --rm -v "$(pwd):/usr/local/structurizr" \
   -w /usr/local/structurizr/architecture \
-  structurizr/cli validate -workspace workspace.dsl
+  structurizr/structurizr validate -workspace workspace.dsl
 
 # View to verify (optional)
 make view-architecture
