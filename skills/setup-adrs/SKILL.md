@@ -193,8 +193,8 @@ This project follows [AI-Assisted Project Orchestration patterns](https://github
 ### 6. Architecture as Code
 
 - **C4 DSL** models in `docs/architecture/`
-- Validated with structurizr/cli container
-- Rendered with structurizr/lite for review
+- Validated and inspected with the consolidated `structurizr/structurizr` container (`validate` and `inspect` subcommands)
+- Rendered with the same image's `local` subcommand for review
 
 ### 7. Documentation Framework
 
