@@ -1,8 +1,10 @@
 ---
-# SPDX-FileCopyrightText: 2025 Georges Martin <jrjsmrtn@gmail.com>
-# SPDX-License-Identifier: MIT
 name: wrapup-sprint
 description: Complete a sprint with retrospective, changelog update, and release tagging. Use when sprint work is done, at the end of a sprint cycle, or before starting a new sprint.
+license: MIT
+metadata:
+  author: "Georges Martin <jrjsmrtn@gmail.com>"
+  version: "0.1.7"
 ---
 
 # Wrap Up Sprint

@@ -1,8 +1,10 @@
 ---
-# SPDX-FileCopyrightText: 2025 Georges Martin <jrjsmrtn@gmail.com>
-# SPDX-License-Identifier: MIT
 name: setup-architecture-as-code
 description: Establish architecture-as-code practice using C4 modeling and Structurizr DSL. Use after bootstrap-project, when establishing architecture documentation, or when migrating from diagram-based to code-based architecture.
+license: MIT
+metadata:
+  author: "Georges Martin <jrjsmrtn@gmail.com>"
+  version: "0.1.7"
 ---
 
 # Setup Architecture-as-Code
