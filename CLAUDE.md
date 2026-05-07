@@ -14,19 +14,23 @@ skills/
 
 ## Skill File Format
 
-Each `SKILL.md` uses YAML frontmatter with SPDX headers:
+Each `SKILL.md` follows the [Agent Skills specification](https://agentskills.io/specification) with YAML frontmatter:
 
 ```yaml
 ---
-# SPDX-FileCopyrightText: 2025 Georges Martin <jrjsmrtn@gmail.com>
-# SPDX-License-Identifier: MIT
 name: <skill-name>
 description: <one-line description>. <when-to-use sentences>.
+license: MIT
+metadata:
+  author: "Georges Martin <jrjsmrtn@gmail.com>"
+  version: "0.1.x"
 ---
 ```
 
 - `name` must match the directory name
 - `description` is the trigger: first sentence describes what it does, subsequent sentences describe when to use it
+- `license` is the spec-defined license field (replaces prior SPDX comment headers)
+- `metadata.version` tracks with the parent plugin's `version` in `plugin.json`
 - Body follows a consistent structure: title, When to Use, Required Inputs, Workflow (phased steps), Outputs (checklist), Validation, Related Skills
 
 ## Skills Overview
@@ -45,7 +49,7 @@ description: <one-line description>. <when-to-use sentences>.
 ## Development Conventions
 
 - Version: 0.1.x during development (semantic versioning)
-- License: MIT with SPDX headers in every SKILL.md frontmatter
+- License: MIT, declared via `license: MIT` in every SKILL.md frontmatter (per Agent Skills spec)
 - Skill names are kebab-case
 - Skills reference each other via `Related Skills` sections
 - Skills are designed to run in the target project's working directory, not in this plugin repo

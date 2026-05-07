@@ -1,8 +1,10 @@
 ---
-# SPDX-FileCopyrightText: 2025 Georges Martin <jrjsmrtn@gmail.com>
-# SPDX-License-Identifier: MIT
 name: setup-pre-commit
 description: Configure two-stage pre-commit hooks for quality automation. Use after bootstrap-project and setup-adrs, when adding quality gates to an existing project, or when standardizing quality automation.
+license: MIT
+metadata:
+  author: "Georges Martin <jrjsmrtn@gmail.com>"
+  version: "0.1.7"
 ---
 
 # Setup Pre-commit Hooks
