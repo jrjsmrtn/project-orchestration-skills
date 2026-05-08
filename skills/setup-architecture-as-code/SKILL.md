@@ -1,10 +1,10 @@
 ---
 name: setup-architecture-as-code
 description: Establish architecture-as-code practice using C4 modeling and Structurizr DSL. Use after bootstrap-project, when establishing architecture documentation, or when migrating from diagram-based to code-based architecture.
-license: MIT
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.7"
+  version: "0.1.8"
+license: MIT
 ---
 
 # Setup Architecture-as-Code

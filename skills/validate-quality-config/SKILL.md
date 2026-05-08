@@ -1,10 +1,10 @@
 ---
 name: validate-quality-config
 description: Validate consistency across quality configuration files. Use after setup-pre-commit, when debugging "works locally, fails in CI" issues, before major releases, or when onboarding.
-license: MIT
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.7"
+  version: "0.1.8"
+license: MIT
 ---
 
 # Validate Quality Configuration
