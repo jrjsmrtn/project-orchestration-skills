@@ -1,10 +1,10 @@
 ---
 name: setup-pre-commit
 description: Configure two-stage pre-commit hooks for quality automation. Use after bootstrap-project and setup-adrs, when adding quality gates to an existing project, or when standardizing quality automation.
-license: MIT
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.7"
+  version: "0.1.8"
+license: MIT
 ---
 
 # Setup Pre-commit Hooks

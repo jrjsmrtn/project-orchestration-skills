@@ -1,10 +1,10 @@
 ---
 name: wrapup-sprint
 description: Complete a sprint with retrospective, changelog update, and release tagging. Use when sprint work is done, at the end of a sprint cycle, or before starting a new sprint.
-license: MIT
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.7"
+  version: "0.1.8"
+license: MIT
 ---
 
 # Wrap Up Sprint
