@@ -3,7 +3,7 @@ name: setup-pre-commit
 description: Configure two-stage pre-commit hooks for quality automation. Use after bootstrap-project and setup-adrs, when adding quality gates to an existing project, or when standardizing quality automation.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.9"
+  version: "0.1.10"
 license: MIT
 ---
 
@@ -213,6 +213,25 @@ pre-commit --version
 
 Create hook configuration based on framework choice and technology stack:
 
+#### Dependency vulnerability auditing
+
+The pre-push stage runs a dependency vulnerability audit per ecosystem — this satisfies the
+OpenSSF Scorecard `Vulnerabilities` check and the Best Practices Badge's dependency-vulnerability
+criterion. The tools are **not interchangeable**; know what each checks:
+
+| Ecosystem | Tool | Checks | Prerequisite |
+|-----------|------|--------|--------------|
+| Elixir | `mix deps.audit` | Known **CVEs** in dependencies | add `{:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false}` to `mix.exs` |
+| Elixir | `mix hex.audit` | **Retired** Hex packages | built into Hex |
+| Python | `pip-audit` | Known CVEs (PyPI / OSV) | `pip install pip-audit` (or `uv`) |
+| Rust | `cargo audit` | RustSec advisory DB | `cargo install cargo-audit` |
+
+For Elixir, run **both**: `mix hex.audit` flags retired/deprecated packages, while `mix deps.audit`
+(via the `mix_audit` package) flags packages with known CVEs — different failure modes, both needed.
+Elixir/BEAM advisories are increasingly issued by the **Erlang Ecosystem Foundation**, now a CVE
+Numbering Authority (CNA) for Hex.pm and the BEAM ecosystem under the **EEF Ægis** initiative — so
+`mix deps.audit` is only as good as the advisory feed it consumes, which the EEF now curates.
+
 #### Lefthook — Elixir Configuration
 
 ```yaml
@@ -307,6 +326,10 @@ pre-push:
       run: mix test
     dialyzer:
       run: mix dialyzer
+    deps-audit:
+      run: mix deps.audit
+    hex-audit:
+      run: mix hex.audit
     clippy:
       run: cargo clippy -- -D warnings
       root: "native/{nif_name}/"
@@ -365,6 +388,13 @@ repos:
       - id: mix-deps-audit
         name: mix deps.audit
         entry: mix deps.audit
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: mix-hex-audit
+        name: mix hex.audit
+        entry: mix hex.audit
         language: system
         pass_filenames: false
         stages: [pre-push]
@@ -488,6 +518,35 @@ git add .gitleaks.toml .gitleaksignore  # if created
 git commit -m "chore: add pre-commit hooks configuration"
 ```
 
+### Step 9: Enforce dependency audits in CI
+
+Pre-push hooks are local and bypassable (`git push --no-verify`). For real enforcement, run the
+same dependency audit **server-side** in a dedicated CI job — this is what the OpenSSF Scorecard
+`Vulnerabilities` check expects. Add an `audit` job (Elixir shown; mirror for `pip-audit` / `cargo audit`):
+
+```yaml
+# .github/workflows/ci.yml (excerpt)
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@<sha> # v4
+      - uses: erlef/setup-beam@<sha> # v1
+        with: { otp-version: "27", elixir-version: "1.18" }
+      - run: mix deps.get
+      - run: mix deps.audit   # known CVEs (needs :mix_audit)
+      - run: mix hex.audit    # retired packages
+```
+
+Run it on a schedule too, so newly-disclosed CVEs are caught on branches that aren't seeing commits:
+
+```yaml
+on:
+  schedule:
+    - cron: "0 6 * * 1"   # weekly
+```
+
+Harden this job (SHA-pin the actions, `permissions: contents: read`) with `harden-ci-workflows`.
+
 ## Outputs
 
 This skill creates:
@@ -499,6 +558,8 @@ This skill creates:
 - [ ] `.git/hooks/pre-commit` (installed by hook framework)
 - [ ] `.git/hooks/pre-push` (installed by hook framework)
 - [ ] `.git/hooks/pre-push-remote-check` (optional, for multi-remote)
+- [ ] `{:mix_audit, ...}` added to `mix.exs` deps (Elixir CVE-audit prerequisite)
+- [ ] Dependency audit enforced in a CI `audit` job (not hook-only) + scheduled re-run
 
 ## Validation
 
@@ -548,3 +609,4 @@ git commit -m "chore: update pre-commit hook versions"
 
 - `setup-adrs` - ADR-0002 documents these practices
 - `validate-quality-config` - Validate configuration consistency
+- `harden-ci-workflows` - harden the CI audit job (SHA-pin actions, least-privilege permissions)
