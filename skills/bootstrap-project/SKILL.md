@@ -3,7 +3,7 @@ name: bootstrap-project
 description: Bootstrap a new project at a chosen graduation tier (t0 minimum, t1 decision-tracked, t2 full pattern language) following AI-Assisted Project Orchestration best practices. Use when starting a new software project, promoting an existing project to a higher tier, or converting an existing project for AI-assisted development.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.10"
+  version: "0.1.11"
 license: MIT
 ---
 
@@ -38,6 +38,7 @@ Before running this skill, gather from the user:
 6. **Technology stack** (e.g., "Elixir/Phoenix/Ash", "Python/FastAPI", "Ansible")
 7. **License** (MIT, Apache-2.0, proprietary) — required at t1+, optional at t0
 8. **Git remotes** (private origin only, or multi-remote with public GitHub/GitLab)
+9. **Distribution profile** (exposure — orthogonal to the tier): **Private** (default — internal/homelab/WIP) or **Public** (open-sourced on a public forge *and* properly licensed). Set the **`ships-artifacts`** marker if the maintainer will publish built packages/images to a registry (Hex/PyPI/GHCR/containers) or signed release binaries. The profile governs which compliance controls apply — see [Distribution Profile](#distribution-profile) below.
 
 **Why project category matters:**
 - **Development**: ADR-0004 (Operations) is skipped
@@ -61,6 +62,20 @@ This skill implements the **Tiered Bootstrap** pattern. Each tier is a strict su
 
 **Knowledge-preservation property**: at every tier, decision rationale is captured at decision-time in durable, version-controlled artifacts (CLAUDE.md, conventional commits, ADRs). No tier requires recovering rationale from non-durable sources (chat logs, agent session memory).
 
+## Distribution Profile
+
+**Orthogonal to the tier.** The tier measures process *maturity*; the distribution profile measures *exposure* — how far the software travels — which is what actually gates compliance controls. A mature internal tool has no external obligations; an early public library incurs them the moment it ships. Set the profile at inception (default **Private**), and graduate it like the tier.
+
+| Profile / marker | Trigger | Controls it adds |
+|---|---|---|
+| **Private** (default) | internal / homelab / WIP | baseline hygiene (secret scanning — already universal) |
+| **Public** | open-sourced on a public forge **and** licensed | LICENSE/REUSE, `SECURITY.md` + coordinated disclosure (Phase 9), OpenSSF Scorecard aspirational |
+| **`ships-artifacts`** (marker) | publishes built packages/images to a registry, or signed release binaries | + SLSA provenance, SBOM, signing, trusted publishing (via `harden-ci-workflows`, `wrapup-sprint`) |
+
+Going Public *is* making the source redistributable (licensing is part of the gate), so there is no separate "distributed" level. **`ships-artifacts` is a boolean, not a rung** — set it when going public, later, or never. Controls attach to the profile, not the tier, so a project pays only for its actual exposure. Record the profile in CLAUDE.md `## Project Context`; promotion to Public is the `public-release` graduation gate (`oss-maintenance`).
+
+This axis maps to recognized frameworks: **Public** → EU CRA "open-source steward" duties + OpenSSF Best Practices; **`ships-artifacts`** → SLSA / EEF Ægis trusted publishing. Treat these as guidance, not legal advice. The `commercial` case (placing on the EU market for pay), which triggers full CRA manufacturer obligations, is out of scope here.
+
 ## Phases by Tier
 
 | Phase | t0 | t1 | t2 |
@@ -79,6 +94,8 @@ At **t0**, only Phases 2 (minimal `.gitignore`) and 3 (CLAUDE.md) are required. 
 At **t1**, add Phase 4 (CHANGELOG) and invoke `setup-adrs` (creates ADR-0001/0002/0003) and `setup-pre-commit`. Still no Diátaxis tree or C4 model.
 
 At **t2**, run all phases. This is the existing default behavior.
+
+**Public profile (any tier)**: additionally run **Phase 9** (`SECURITY.md` + coordinated disclosure). This is gated on the distribution profile, not the tier — a t0 project that is Public still needs it, and a t2 Private project does not.
 
 ## Workflow
 
@@ -153,6 +170,7 @@ Generate a project-specific CLAUDE.md with:
 - **Stack**: [technology stack]
 - **License**: [license]
 - **Tier**: [t0 | t1 | t2]
+- **Distribution profile**: [Private | Public]  (ships-artifacts: [yes | no])
 
 ## Project Tier
 
@@ -360,6 +378,44 @@ After completing the bootstrap, suggest invoking based on tier:
 3. **setup-architecture-as-code** - Create `architecture/` directory, workspace.dsl, and docs symlink
 4. **plan-sprint** - Create Sprint 1 plan
 
+### Phase 9: Security Policy (Public profile)
+
+Gated on the **distribution profile**, not the tier: any project whose profile is **Public** (or is being promoted to Public) gets a `SECURITY.md`. This satisfies the OpenSSF Scorecard `Security-Policy` check, the OpenSSF Best Practices vulnerability-reporting criterion, and the EU CRA "open-source steward" coordinated-disclosure duty. Private-profile projects skip this.
+
+Scaffold a right-sized `SECURITY.md` — fill the bracketed parts; the **Scope** section is the important, non-boilerplate one:
+
+```markdown
+# Security Policy
+
+## Reporting a Vulnerability
+
+Please report security vulnerabilities **privately** — do not open a public issue.
+
+- Preferred: [GitHub Security Advisories](https://github.com/{owner}/{repo}/security/advisories/new) (private)
+- Or email: {maintainer-email}
+
+We aim to acknowledge within [N business days] and to share a remediation timeline after
+triage. We follow **coordinated disclosure**: please allow reasonable time for a fix before
+public disclosure.
+
+## Supported Versions
+
+| Version | Supported |
+|---------|-----------|
+| {latest-minor}.x | ✅ |
+| < {latest-minor} | ❌ |
+
+## Scope
+
+[Author-filled — the point of this file. State this project's realistic threat model: trust
+boundaries, untrusted inputs, what is in and out of scope. Avoid boilerplate; an honest,
+project-specific model is what makes the policy useful. e.g. "parses untrusted diagram input;
+shell-escaping is in scope" or "no runtime, no network, no deps — the attack surface is the
+integrity of the published artifact".]
+```
+
+Then enable **private vulnerability reporting** on the repo (GitHub: Settings → Code security → Private vulnerability reporting) so the Advisories link works. The fuller go-public checklist (CONTRIBUTING, CODE_OF_CONDUCT, LICENSE verification, CI) is owned by the `public-release` skill (`oss-maintenance`) at the Private→Public graduation gate — this phase covers only the security policy.
+
 ## Graduation (Tier Promotion)
 
 When promoting an existing project from a lower tier to a higher one, this skill should **reformat existing artifacts**, not recreate them. The decision rationale is already captured at the lower tier; promotion makes it formal.
@@ -408,6 +464,11 @@ This skill creates artifacts based on tier:
 - [ ] (If Audience Registry) `features/` subdirectories per audience category
 - [ ] (If Audience Registry) Diátaxis doc stubs with audience frontmatter
 
+**Public profile** (any tier):
+- [ ] `SECURITY.md` with private reporting, supported-versions, and a project-specific Scope/threat model
+- [ ] Private vulnerability reporting enabled on the repo
+- [ ] CLAUDE.md `## Project Context` records the distribution profile (+ `ships-artifacts` marker)
+
 ## Validation
 
 Verify successful bootstrap based on tier:
@@ -429,6 +490,9 @@ Verify successful bootstrap based on tier:
 10. `docs/sprints/sprint-0001-plan.md` exists
 11. (If Audience Registry) Traced artifacts align with audience categories
 
+**Public profile** (any tier):
+12. `SECURITY.md` exists with a private reporting channel and a filled-in Scope section (not boilerplate)
+
 ## Related Skills
 
 - `analyze-project` - Run SPARK analysis before bootstrap
@@ -436,3 +500,5 @@ Verify successful bootstrap based on tier:
 - `setup-pre-commit` - Configure pre-commit hooks
 - `setup-architecture-as-code` - Create architecture model
 - `plan-sprint` - Create initial sprint plan
+- `public-release` (oss-maintenance) - Private→Public graduation gate (full go-public checklist)
+- `harden-ci-workflows` - CI hardening for Public + `ships-artifacts` projects
