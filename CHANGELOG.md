@@ -8,6 +8,17 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.13] - 2026-07-04
+
+### Added
+
+- New skill `setup-container-security`: harden container images — digest-pinned bases
+  (multi-arch index + skopeo bump procedure), minimal/multi-stage builds, non-root
+  runtime, sha256-verified artifact fetches, `.dockerignore`, hadolint/shellcheck,
+  grype (fixable-only `.grype.yaml` policy) + syft SBOM, `HEALTHCHECK`, and Dependabot
+  digest bumps. `ships-artifacts` publishing (SBOM release asset + cosign) delegates to
+  `wrapup-sprint`.
+
 ## [0.1.12] - 2026-07-04
 
 ### Added

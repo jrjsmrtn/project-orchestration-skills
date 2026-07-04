@@ -1,6 +1,6 @@
 # AI-Assisted Project Orchestration Skills
 
-Claude Code plugin providing 9 skills for AI-assisted project orchestration.
+Claude Code plugin providing 10 skills for AI-assisted project orchestration.
 
 ## Project Structure
 
@@ -44,6 +44,7 @@ metadata:
 | setup-pre-commit | Quality (two-stage hooks) |
 | validate-quality-config | Quality (config consistency) |
 | harden-ci-workflows | Quality (CI/CD supply-chain hardening) |
+| setup-container-security | Quality (container image hardening) |
 | plan-sprint | Sprint workflow (planning, minimal or structured) |
 | wrapup-sprint | Sprint workflow (retrospective, minimal or expanded) |
 

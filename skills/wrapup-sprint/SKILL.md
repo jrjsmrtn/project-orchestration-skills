@@ -3,7 +3,7 @@ name: wrapup-sprint
 description: Complete a sprint with retrospective, changelog update, release tagging, and (for `ships-artifacts` projects) release provenance — SBOM, SLSA, and signing. Use when sprint work is done, at the end of a sprint cycle, or before starting a new sprint.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.12"
+  version: "0.1.13"
 license: MIT
 ---
 
