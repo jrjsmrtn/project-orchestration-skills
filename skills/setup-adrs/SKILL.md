@@ -3,7 +3,7 @@ name: setup-adrs
 description: Create the foundational Architecture Decision Record (ADR) sequence for a new project. Use after bootstrap-project, when establishing decision documentation, or when standardizing ADR practices.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.13"
+  version: "0.1.14"
 license: MIT
 ---
 
@@ -240,9 +240,12 @@ ADRs in `docs/adr/`, sprint plans in `docs/sprints/`, roadmap in `docs/roadmap/`
 
 ### 11. Licensing and Copyright
 
+*(Public-profile control — enforce for open-sourced projects; skip for Private.)*
+
 - **REUSE compliance** ([reuse.software](https://reuse.software/)) for machine-readable copyright and license declarations
 - SPDX headers (`SPDX-FileCopyrightText`, `SPDX-License-Identifier`) on source files
-- License texts in `LICENSES/` directory
+- License texts in `LICENSES/` directory, bulk/vendored annotations in `REUSE.toml`
+- **Enforced, not just prescribed**: `reuse lint` runs as a git hook and a CI job (`fsfe/reuse-action`) — see `setup-pre-commit`. Third-party/transitive license compatibility is covered by the mixed-license aggregate analysis where applicable.
 
 ### 12. Code Conventions
 

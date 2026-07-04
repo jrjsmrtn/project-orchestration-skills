@@ -3,7 +3,7 @@ name: setup-pre-commit
 description: Configure two-stage pre-commit hooks for quality automation. Use after bootstrap-project and setup-adrs, when adding quality gates to an existing project, or when standardizing quality automation.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.13"
+  version: "0.1.14"
 license: MIT
 ---
 
@@ -231,6 +231,51 @@ For Elixir, run **both**: `mix hex.audit` flags retired/deprecated packages, whi
 Elixir/BEAM advisories are increasingly issued by the **Erlang Ecosystem Foundation**, now a CVE
 Numbering Authority (CNA) for Hex.pm and the BEAM ecosystem under the **EEF Ægis** initiative — so
 `mix deps.audit` is only as good as the advisory feed it consumes, which the EEF now curates.
+
+#### Lockfile and frozen installs
+
+Commit the ecosystem lockfile and install from it deterministically — the OpenSSF Scorecard `Pinned-Dependencies` control, which makes builds reproducible and tamper-evident.
+
+| Ecosystem | Lockfile (commit it) | Frozen/locked install (CI + containers) |
+|-----------|----------------------|------------------------------------------|
+| Python (uv) | `uv.lock` | `uv sync --frozen` |
+| Elixir | `mix.lock` | `mix deps.get --check-locked` (CI) |
+| Rust | `Cargo.lock` | `cargo build --locked` |
+| Node | `package-lock.json` | `npm ci` |
+
+Add a pre-push/CI check that the lockfile is present and committed, and flag a manifest that declares only lower-bound (`>=` / `~>`) constraints with **no** committed lock — anyone installing from sdist/wheel without the lock then resolves loosely. In a Containerfile, avoid `COPY mix.lock*` (optional glob): it silently masks a missing lockfile.
+
+#### License compliance — REUSE (Public profile)
+
+For **Public** projects, make licensing machine-readable and *enforced* — not just prescribed in ADR-0002 §11. Provides the SPDX data an SBOM/CRA review expects. Scaffold a `LICENSES/` directory (one SPDX license text each), inline `SPDX-FileCopyrightText` + `SPDX-License-Identifier` headers, and a `REUSE.toml` to bulk-annotate docs and correctly attribute vendored/upstream fixtures (kept byte-pristine yet attributed):
+
+```toml
+# REUSE.toml
+version = 1
+
+[[annotations]]
+path = "docs/**"
+SPDX-FileCopyrightText = "2026 Georges Martin <jrjsmrtn@gmail.com>"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = "vendor/upstream/**"
+SPDX-FileCopyrightText = "Upstream authors"
+SPDX-License-Identifier = "Apache-2.0"
+```
+
+Enforce `reuse lint` in both stages — a git hook and a CI job:
+
+```yaml
+# .lefthook.yml
+reuse:
+  run: reuse lint
+```
+
+```yaml
+# .github/workflows/ci.yml — SHA-pin per harden-ci-workflows
+- uses: fsfe/reuse-action@<sha>   # v5
+```
 
 #### Lefthook — Elixir Configuration
 
@@ -560,6 +605,8 @@ This skill creates:
 - [ ] `.git/hooks/pre-push-remote-check` (optional, for multi-remote)
 - [ ] `{:mix_audit, ...}` added to `mix.exs` deps (Elixir CVE-audit prerequisite)
 - [ ] Dependency audit enforced in a CI `audit` job (not hook-only) + scheduled re-run
+- [ ] Ecosystem lockfile committed; frozen/locked installs in CI + containers
+- [ ] (Public profile) REUSE: `LICENSES/` + `REUSE.toml` + `reuse lint` hook and CI job
 
 ## Validation
 

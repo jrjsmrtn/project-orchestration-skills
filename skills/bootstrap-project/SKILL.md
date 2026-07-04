@@ -3,7 +3,7 @@ name: bootstrap-project
 description: Bootstrap a new project at a chosen graduation tier (t0 minimum, t1 decision-tracked, t2 full pattern language) following AI-Assisted Project Orchestration best practices. Use when starting a new software project, promoting an existing project to a higher tier, or converting an existing project for AI-assisted development.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.13"
+  version: "0.1.14"
 license: MIT
 ---
 
@@ -416,6 +416,33 @@ integrity of the published artifact".]
 
 Then enable **private vulnerability reporting** on the repo (GitHub: Settings → Code security → Private vulnerability reporting) so the Advisories link works. The fuller go-public checklist (CONTRIBUTING, CODE_OF_CONDUCT, LICENSE verification, CI) is owned by the `public-release` skill (`oss-maintenance`) at the Private→Public graduation gate — this phase covers only the security policy.
 
+### Phase 10: Dependency Update Automation (Dependabot)
+
+For any project with a GitHub remote, generate `.github/dependabot.yml` so dependencies, GitHub Actions, and base images get automatic update PRs. This is the OpenSSF Scorecard `Dependency-Update-Tool` control, and it keeps SHA-pinned actions (`harden-ci-workflows`) and digest-pinned images (`setup-container-security`) current. Cover every ecosystem the project uses — the package manager, **`github-actions`** (if there is CI), and **`docker`** (if there is a Containerfile):
+
+```yaml
+# .github/dependabot.yml
+version: 2
+updates:
+  - package-ecosystem: "mix"          # or pip / uv / npm / cargo / gomod
+    directory: "/"
+    schedule: { interval: "weekly" }
+    groups:
+      deps: { patterns: ["*"] }
+    target-branch: "develop"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule: { interval: "weekly" }
+  - package-ecosystem: "docker"       # only if a Containerfile/Dockerfile exists
+    directory: "/"
+    schedule: { interval: "weekly" }
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]   # digest re-pin only
+```
+
+Limits worth documenting: run-step images invoked *inside* a workflow or Makefile (not a `FROM`/`uses:`) are invisible to Dependabot and must be hand-pinned. This phase generates **config**; PR *triage* (reviewing and merging update PRs) is the `oss-maintenance` workflow's job, not this skill's.
+
 ## Graduation (Tier Promotion)
 
 When promoting an existing project from a lower tier to a higher one, this skill should **reformat existing artifacts**, not recreate them. The decision rationale is already captured at the lower tier; promotion makes it formal.
@@ -469,6 +496,9 @@ This skill creates artifacts based on tier:
 - [ ] Private vulnerability reporting enabled on the repo
 - [ ] CLAUDE.md `## Project Context` records the distribution profile (+ `ships-artifacts` marker)
 
+**With a GitHub remote**:
+- [ ] `.github/dependabot.yml` covering the package ecosystem + `github-actions` (if CI) + `docker` (if Containerfile)
+
 ## Validation
 
 Verify successful bootstrap based on tier:
@@ -502,3 +532,4 @@ Verify successful bootstrap based on tier:
 - `plan-sprint` - Create initial sprint plan
 - `public-release` (oss-maintenance) - Private→Public graduation gate (full go-public checklist)
 - `harden-ci-workflows` - CI hardening for Public + `ships-artifacts` projects
+- `setup-container-security` - container image hardening (digest pins, non-root, grype/SBOM)

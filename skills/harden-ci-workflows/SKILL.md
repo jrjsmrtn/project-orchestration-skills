@@ -3,7 +3,7 @@ name: harden-ci-workflows
 description: Harden GitHub Actions CI/CD workflows for supply-chain security — SHA-pin actions, least-privilege token permissions, verified toolchain installs, OpenSSF Scorecard, and SLSA provenance. Use when adding or auditing CI workflows, before making a repository public, when a supply-chain review flags CI gaps, or when standardizing CI hardening across projects.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.13"
+  version: "0.1.14"
 license: MIT
 ---
 

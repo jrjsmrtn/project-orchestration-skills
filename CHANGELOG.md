@@ -8,6 +8,22 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.14] - 2026-07-04
+
+### Added
+
+- `setup-pre-commit`: lockfile + frozen-install enforcement (uv/mix/cargo/npm) with a check for
+  lower-bound-only manifests missing a lockfile; and a Public-profile REUSE license-compliance
+  gate — `REUSE.toml` + `LICENSES/` + `reuse lint` as a git hook and a CI job.
+- `bootstrap-project`: Phase 10 generates a multi-ecosystem `.github/dependabot.yml`
+  (package manager + `github-actions` + `docker`). Config generation only — PR triage stays with
+  the `oss-maintenance` workflow.
+
+### Changed
+
+- `setup-adrs`: ADR-0002 §11 (Licensing) now points at enforced `reuse lint` (hook + CI) and marks
+  licensing a Public-profile control, rather than prescribing REUSE abstractly.
+
 ## [0.1.13] - 2026-07-04
 
 ### Added
