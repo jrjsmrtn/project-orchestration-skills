@@ -3,7 +3,7 @@ name: setup-adrs
 description: Create the foundational Architecture Decision Record (ADR) sequence for a new project. Use after bootstrap-project, when establishing decision documentation, or when standardizing ADR practices.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.14"
+  version: "0.1.15"
 license: MIT
 ---
 
@@ -491,6 +491,48 @@ foundational:
 
 **Do not create a README.md inside `docs/adr/`** — the adrtools importer parses every `.md` file and will fail on non-ADR markdown files.
 
+## Third-Party / Aggregate Licensing (LICENSING.md)
+
+Section 11 covers the project's **own** license (REUSE/SPDX). This covers **third-party** licensing for projects that **vendor, bundle, statically link, or ship a container/WASM image** containing others' code — a Public-profile concern. Produce a `LICENSING.md` and record the decision in an ADR.
+
+A permissive wrapper does **not** make the shipped artifact permissive. Identify the **copyleft floor** — the most restrictive license governing the aggregate:
+
+- A wrapper that **statically links** a GPL-3.0 library ships an aggregate effectively under GPL-3.0, regardless of the wrapper's own license (e.g. an Apache-2.0 WASM wrapper over GPL-3.0 `libversion`).
+- A container image bundling an **AGPL-only** extension has an **AGPL-3.0** floor, and AGPL §13 (network clause) then applies if it is offered as a service.
+
+`LICENSING.md` structure (cross-check the component table against the CycloneDX SBOM's per-component license summary from `setup-container-security` / `wrapup-sprint`):
+
+```markdown
+# Licensing
+
+This repository's own files are licensed **[SPDX]** (see [LICENSE](LICENSE)).
+The **shipped artifact is a mixed-license aggregate** — it [bundles/vendors/statically links]
+third-party components. Its **copyleft floor is [SPDX]** because [component] is [license]-only.
+
+## Bundled components
+
+| Component | Version | License | SPDX | Type |
+|-----------|---------|---------|------|------|
+| [name] | [ver] | [license] | `[SPDX]` | Permissive / Copyleft / Source-available |
+
+## Obligations by how you use it
+
+| Use | Obligation |
+|-----|------------|
+| Self-hosted / internal | Attribution only (if the floor stays permissive) |
+| Redistribute the artifact | Offer copyleft components' source; comply with each component's terms |
+| Offer as a network service (SaaS) | AGPL §13 source-offer, if any AGPL component is present |
+
+## Attribution / source
+
+- [component] — [upstream URL] ([license])
+
+---
+_License identification and how the licenses interact — not legal advice._
+```
+
+Record the copyleft-floor conclusion and the intended distribution mode (self-host / redistribute / SaaS) in an ADR, so a later pivot re-triggers the review.
+
 ## Outputs
 
 This skill creates:
@@ -499,6 +541,7 @@ This skill creates:
 - [ ] `docs/adr/0002-adopt-development-best-practices.md` (HOW TO DEVELOP)
 - [ ] `docs/adr/0003-[technology-stack].md` (WHAT TECH)
 - [ ] `docs/adr/0004-operations-best-practices.md` (HOW TO OPERATE — Infrastructure/Hybrid only)
+- [ ] (Public project that vendors/bundles/static-links third-party code) `LICENSING.md` + an ADR recording the copyleft floor and distribution mode
 
 ## Validation
 

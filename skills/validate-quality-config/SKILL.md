@@ -3,7 +3,7 @@ name: validate-quality-config
 description: Validate consistency across quality configuration files. Use after setup-pre-commit, when debugging "works locally, fails in CI" issues, before major releases, or when onboarding.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.14"
+  version: "0.1.15"
 license: MIT
 ---
 
@@ -145,7 +145,30 @@ if [ -f .gitlab-ci.yml ]; then
 fi
 ```
 
-### Step 6: Generate Validation Report
+### Step 6: Validate Version Consistency
+
+The declared version must agree across every file that states it. Drift here is a real, common defect (e.g. a README badge or `SECURITY.md` left behind while the manifest moved on).
+
+```bash
+echo "Checking version consistency..."
+# Canonical version from the package manifest (pick the one for the stack):
+ver=$(grep -m1 -oE '"version":[[:space:]]*"[0-9]+\.[0-9]+\.[0-9]+"' package.json 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+ver=${ver:-$(grep -m1 -oE '@version[[:space:]]+"[0-9]+\.[0-9]+\.[0-9]+"' mix.exs 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')}
+ver=${ver:-$(grep -m1 -oE '^version[[:space:]]*=[[:space:]]*"[0-9]+\.[0-9]+\.[0-9]+"' pyproject.toml 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')}
+echo "manifest version: ${ver:-UNKNOWN}"
+
+# The manifest version should appear in each of these; a *different* x.y.z is drift:
+for f in README.md CHANGELOG.md SECURITY.md; do
+  [ -f "$f" ] || continue
+  if grep -q "$ver" "$f"; then echo "✓ $f mentions $ver"
+  else echo "✗ $f does not mention $ver"; fi
+  grep -oE '[0-9]+\.[0-9]+\.[0-9]+' "$f" | grep -v "^$ver$" | sort -u | sed "s/^/  ⚠ $f also states /"
+done
+```
+
+Confirm the declared version agrees across the package manifest (`mix.exs` `@version`, `pyproject.toml` `version`, `package.json` `version`, `Cargo.toml`, `build.gradle.kts`), the `README.md` status line/badge, the latest released `CHANGELOG.md` section, and the `SECURITY.md` supported-versions table. Report any divergence as an error, and honour the SemVer-during-development rule (patch-level `0.1.x`) from ADR-0002.
+
+### Step 7: Generate Validation Report
 
 ```bash
 echo ""
@@ -234,6 +257,7 @@ fi
 
 This skill produces:
 - [ ] Validation report (stdout)
+- [ ] Version-consistency check across manifest / README / CHANGELOG / SECURITY.md
 - [ ] (Optional) `scripts/validate-quality-config.sh` for automation
 
 ## Integration

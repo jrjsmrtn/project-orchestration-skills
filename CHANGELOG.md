@@ -8,6 +8,17 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.15] - 2026-07-04
+
+### Added
+
+- `setup-adrs`: Third-Party / Aggregate Licensing guidance and a `LICENSING.md` template —
+  per-component SPDX table, copyleft-floor identification (static-linking a GPL-3.0 library, or
+  an AGPL-only container component), and obligations mapped to usage mode (self-host / redistribute
+  / SaaS), with an accompanying ADR.
+- `validate-quality-config`: Step 6 version-consistency check — the declared version must agree
+  across the package manifest, README, CHANGELOG, and `SECURITY.md`.
+
 ## [0.1.14] - 2026-07-04
 
 ### Added
