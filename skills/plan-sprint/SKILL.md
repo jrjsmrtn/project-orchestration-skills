@@ -3,7 +3,7 @@ name: plan-sprint
 description: Create a sprint plan for a new development cycle. Use when starting a new sprint, after completing wrapup-sprint, or when initializing Sprint 1 for a new project.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.8"
+  version: "0.1.9"
 license: MIT
 ---
 
