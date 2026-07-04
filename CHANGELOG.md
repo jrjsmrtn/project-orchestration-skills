@@ -8,6 +8,15 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.12] - 2026-07-04
+
+### Added
+
+- `wrapup-sprint`: profile-gated release-provenance step for `ships-artifacts` projects —
+  SBOM (syft, SPDX + CycloneDX), SLSA provenance for binary/tarball releases
+  (slsa-github-generator + a slsa-verifier consumer guide), and cosign keyless signing for
+  container images. Presented per artifact type, aligned with SLSA / EU CRA / EEF Ægis.
+
 ## [0.1.11] - 2026-07-04
 
 ### Added

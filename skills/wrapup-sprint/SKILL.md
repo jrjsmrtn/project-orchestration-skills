@@ -1,9 +1,9 @@
 ---
 name: wrapup-sprint
-description: Complete a sprint with retrospective, changelog update, and release tagging. Use when sprint work is done, at the end of a sprint cycle, or before starting a new sprint.
+description: Complete a sprint with retrospective, changelog update, release tagging, and (for `ships-artifacts` projects) release provenance — SBOM, SLSA, and signing. Use when sprint work is done, at the end of a sprint cycle, or before starting a new sprint.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.11"
+  version: "0.1.12"
 license: MIT
 ---
 
@@ -220,7 +220,72 @@ git push origin develop --tags
 # git push github main --tags
 ```
 
-### Step 11: Prepare Next Sprint
+### Step 11: Release Provenance (`ships-artifacts` profile)
+
+**Skip unless the project's distribution profile carries the `ships-artifacts` marker** (publishes packages/images to a registry, or signed release binaries — see `bootstrap-project`). For source-only Public projects and Private projects, tagging (Step 10) *is* the end of the release.
+
+For `ships-artifacts` projects the release must carry integrity evidence. The controls depend on the **artifact type** — they are separate patterns, not one pipeline:
+
+**SBOM (any artifact type)** — one syft pass emits both formats, daemonless (export an image to an archive first, then scan from disk):
+
+```bash
+syft scan <dir|archive> -q \
+  -o spdx-json=sbom.spdx.json \
+  -o cyclonedx-json=sbom.cdx.json
+```
+
+Attach both to the release (or upload as a CI artifact). Covers the EU CRA SBOM expectation.
+
+**Binary / source-tarball releases → SLSA provenance.** In the release workflow, hash the build outputs and hand off to the **tag-pinned** generator (the sanctioned exception to SHA-pinning):
+
+```yaml
+# build job:  outputs: { hashes: ${{ steps.hash.outputs.hashes }} }
+- id: hash
+  run: cd dist && echo "hashes=$(sha256sum * | base64 -w0)" >> "$GITHUB_OUTPUT"
+
+provenance:
+  needs: [build]
+  permissions: { actions: read, id-token: write, contents: write }
+  uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
+  with:
+    base64-subjects: ${{ needs.build.outputs.hashes }}
+    upload-assets: true
+    # private-repository: true   # add if the repo is private
+```
+
+This attaches a `.intoto.jsonl` to the release. Ship a consumer guide at `docs/howto/verifying-releases.md`:
+
+```bash
+slsa-verifier verify-artifact \
+  --provenance-path <artifact>.intoto.jsonl \
+  --source-uri github.com/{owner}/{repo} \
+  <artifact>
+```
+
+**Container images → cosign keyless signing** (OIDC, no keys). Sign the image **by digest** in the publish job:
+
+```yaml
+publish:
+  if: startsWith(github.ref, 'refs/tags/v')
+  permissions: { contents: read, packages: write, id-token: write }
+  steps:
+    - uses: sigstore/cosign-installer@<sha>   # v3, SHA-pinned
+    - run: cosign sign --yes "${IMAGE}@${DIGEST}"   # DIGEST from the build-push step
+```
+
+Document consumer verification in the README (note the issuer is a full `https://` URL, the source-uri above is not):
+
+```bash
+cosign verify {registry}/{owner}/{repo}:<tag> \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+  --certificate-identity-regexp '^https://github.com/{owner}/{repo}/\.github/workflows/<wf>\.yml@refs/tags/v'
+```
+
+The release **workflow** itself (job permissions, the SLSA-generator tag-pin exception, SHA-pinned `cosign-installer`) is hardened by `harden-ci-workflows`. This step's job at wrap-up is to confirm the release carries an SBOM + provenance/signing appropriate to its artifact type, and that a verification guide exists.
+
+> **Grounding**: SLSA + EU CRA (build integrity, SBOM) and EEF Ægis trusted publishing (Hex/BEAM). These are the `ships-artifacts` controls from the distribution-profile axis (see `bootstrap-project`). Note: signing and SLSA provenance are per-artifact-type — cosign for images, slsa-verifier for tarballs/binaries; don't conflate them.
+
+### Step 12: Prepare Next Sprint
 
 Suggest running `plan-sprint` skill to create Sprint N+1 plan.
 
@@ -235,6 +300,11 @@ This skill creates/updates:
 - [ ] `CLAUDE.md` (current sprint reference + propagated insights)
 - [ ] Git commit: `chore: complete Sprint N wrap-up`
 - [ ] Git tag: `v0.1.x`
+
+**`ships-artifacts` profile** (release-time):
+- [ ] SBOM attached (syft: `sbom.spdx.json` + `sbom.cdx.json`)
+- [ ] SLSA provenance (`.intoto.jsonl`) for binary/tarball releases, **or** cosign signature for container images
+- [ ] Consumer verification guide (`docs/howto/verifying-releases.md` and/or a README `cosign verify` block)
 
 ## Validation
 
@@ -252,8 +322,11 @@ git tag -l "v0.1.x"
 ls docs/sprints/sprint-NNNN-retrospective.*
 ```
 
+**`ships-artifacts` profile**: confirm the release attached an SBOM and the right integrity evidence for its artifact type — a `.intoto.jsonl` that `slsa-verifier` accepts (tarball/binary) or a signature that `cosign verify` accepts (image) — and that a verification guide exists.
+
 ## Related Skills
 
 - `plan-sprint` - Create next sprint plan
-- `bootstrap-project` - Initial project setup
+- `bootstrap-project` - Initial project setup; declares the distribution profile / `ships-artifacts` marker
+- `harden-ci-workflows` - Harden the release workflow that produces provenance (permissions, SLSA-generator tag exception, SHA-pinned cosign-installer)
 - `setup-adrs` - ADR-0002 documents sprint practices
