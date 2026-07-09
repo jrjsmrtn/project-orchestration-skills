@@ -8,6 +8,41 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.19] - 2026-07-10
+
+### Fixed
+
+- Portfolio-review quality pass across all 10 skills: replaced broken workspace-relative
+  `../../../docs/patterns/…` links with absolute upstream GitHub URLs; corrected the Structurizr CLI
+  flag `-workspace` → `-w` and mounted the project root with `:z` for both `validate` and the `local`
+  viewer (`setup-architecture-as-code`); fixed the `set -e` + `((errors++))` counter in
+  `validate-quality-config` and added Required Inputs / Validation sections; pointed `setup-adrs`
+  validation at `docs/adr/index.yml` (not `README.md`); added the correct `gh`
+  private-vulnerability-reporting check; glossed author-internal jargon for portability.
+
+## [0.1.18] - 2026-07-10
+
+### Fixed
+
+- `wrapup-sprint`: reference the tracker-boundary decision by its real ADR title
+  ("Work-Organization Boundary") so it resolves in `docs/adr/`.
+
+## [0.1.17] - 2026-07-10
+
+### Added
+
+- Work-organization **tracker boundary** (single source of truth for tactical status): `wrapup-sprint`
+  Step 7 honours a public forge tracker as canonical for per-issue/milestone status once a project has
+  graduated its backlog, keeping the roadmap Sprint History as the narrative/version ledger;
+  `bootstrap-project`'s roadmap template gains a "Tracker Boundary" section.
+
+## [0.1.16] - 2026-07-10
+
+### Changed
+
+- README skill roster synced to the full 10 skills — added `harden-ci-workflows` and
+  `setup-container-security` to the skill tables and the slash-command list.
+
 ## [0.1.15] - 2026-07-04
 
 ### Added
