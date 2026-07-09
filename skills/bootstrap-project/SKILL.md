@@ -3,7 +3,7 @@ name: bootstrap-project
 description: Bootstrap a new project at a chosen graduation tier (t0 minimum, t1 decision-tracked, t2 full pattern language) following AI-Assisted Project Orchestration best practices. Use when starting a new software project, promoting an existing project to a higher tier, or converting an existing project for AI-assisted development.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.16"
+  version: "0.1.17"
 license: MIT
 ---
 
@@ -302,6 +302,14 @@ Create `docs/roadmap/roadmap.md` with an initial project roadmap:
 | Sprint | Phase | Version | Summary |
 |--------|-------|---------|---------|
 | 1 | Foundation | v0.1.0 | [Brief description] |
+
+## Tracker Boundary
+
+_Single source of truth for tactical status._ While the project is **Private / in-repo only**, this
+roadmap is canonical. If it goes **Public** and graduates its backlog to a forge tracker (via
+`graduate-backlog`), record the split here: what stays canonical in-repo (this roadmap, ADRs, sprint
+retrospectives) vs. what the tracker owns (per-issue/milestone status). Default once graduated: the
+tracker owns tactical status; this Sprint History stays the narrative/version ledger.
 ```
 
 The roadmap is a living document — update it as phases complete and new ones emerge.

@@ -3,7 +3,7 @@ name: wrapup-sprint
 description: Complete a sprint with retrospective, changelog update, release tagging, and (for `ships-artifacts` projects) release provenance — SBOM, SLSA, and signing. Use when sprint work is done, at the end of a sprint cycle, or before starting a new sprint.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.16"
+  version: "0.1.17"
 license: MIT
 ---
 
@@ -179,6 +179,14 @@ Update `docs/roadmap/roadmap.md`:
 - Add the sprint to the Sprint History table
 - If this sprint completes a phase, mark the phase as done and note the start of the next phase
 
+**Single source of truth for tactical status.** If the project has graduated its backlog to a public
+forge tracker (via the `graduate-backlog` skill, oss-maintenance), honour the boundary recorded in
+its Tracker-Boundary / hybrid-boundary ADR — do **not** double-maintain status. By default the
+**tracker** owns per-issue/milestone status: close the corresponding milestone/issues there, and let
+the roadmap **Sprint History** stay the narrative/version ledger (one row per sprint: phase, version,
+summary) that *links out* to the milestone rather than re-tallying open items. If no tracker exists
+(the common in-repo-only case), the roadmap remains canonical — update it as above.
+
 ### Step 8: Update CLAUDE.md
 
 Update the "Current Development Status" section:
@@ -330,3 +338,4 @@ ls docs/sprints/sprint-NNNN-retrospective.*
 - `bootstrap-project` - Initial project setup; declares the distribution profile / `ships-artifacts` marker
 - `harden-ci-workflows` - Harden the release workflow that produces provenance (permissions, SLSA-generator tag exception, SHA-pinned cosign-installer)
 - `setup-adrs` - ADR-0002 documents sprint practices
+- `graduate-backlog` (oss-maintenance) - once a project goes public, defines the tracker boundary and single source of truth that Step 7 honours
