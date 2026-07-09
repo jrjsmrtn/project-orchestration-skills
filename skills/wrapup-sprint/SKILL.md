@@ -3,7 +3,7 @@ name: wrapup-sprint
 description: Complete a sprint with retrospective, changelog update, release tagging, and (for `ships-artifacts` projects) release provenance — SBOM, SLSA, and signing. Use when sprint work is done, at the end of a sprint cycle, or before starting a new sprint.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.17"
+  version: "0.1.18"
 license: MIT
 ---
 
@@ -181,7 +181,8 @@ Update `docs/roadmap/roadmap.md`:
 
 **Single source of truth for tactical status.** If the project has graduated its backlog to a public
 forge tracker (via the `graduate-backlog` skill, oss-maintenance), honour the boundary recorded in
-its Tracker-Boundary / hybrid-boundary ADR — do **not** double-maintain status. By default the
+its **Work-Organization Boundary ADR** (the `graduate-backlog` hybrid boundary) — do **not**
+double-maintain status. By default the
 **tracker** owns per-issue/milestone status: close the corresponding milestone/issues there, and let
 the roadmap **Sprint History** stay the narrative/version ledger (one row per sprint: phase, version,
 summary) that *links out* to the milestone rather than re-tallying open items. If no tracker exists
