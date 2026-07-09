@@ -3,7 +3,7 @@ name: validate-quality-config
 description: Validate consistency across quality configuration files. Use after setup-pre-commit, when debugging "works locally, fails in CI" issues, before major releases, or when onboarding.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.18"
+  version: "0.1.19"
 license: MIT
 ---
 
@@ -35,6 +35,12 @@ Linter configs                           ← Code analysis
 .github/workflows/*.yml                  ← CI pipeline
 .gitlab-ci.yml
 ```
+
+## Required Inputs
+
+- A project that already has quality configuration in place (run `setup-pre-commit` first)
+- `docs/reference/quality-configuration.md` as the single source of truth for canonical values
+- Read access to the config files being cross-checked (`.editorconfig`, linter configs such as `.credo.exs` / `ruff.toml` / `.prettierrc`, `.pre-commit-config.yaml`, and the CI workflow files under `.github/workflows/` or `.gitlab-ci.yml`)
 
 ## Workflow
 
@@ -166,7 +172,7 @@ for f in README.md CHANGELOG.md SECURITY.md; do
 done
 ```
 
-Confirm the declared version agrees across the package manifest (`mix.exs` `@version`, `pyproject.toml` `version`, `package.json` `version`, `Cargo.toml`, `build.gradle.kts`), the `README.md` status line/badge, the latest released `CHANGELOG.md` section, and the `SECURITY.md` supported-versions table. Report any divergence as an error, and honour the SemVer-during-development rule (patch-level `0.1.x`) from ADR-0002.
+Confirm the declared version agrees across the package manifest (`mix.exs` `@version`, `pyproject.toml` `version`, `package.json` `version`, `Cargo.toml`, `build.gradle.kts`), the `README.md` status line/badge, the latest released `CHANGELOG.md` section, and the `SECURITY.md` supported-versions table. Report any divergence as an error. If the project follows a during-development versioning rule (for example, staying on patch-level `0.1.x` releases until the first stable minor), honour it.
 
 ### Step 7: Generate Validation Report
 
@@ -212,7 +218,7 @@ check() {
         echo -e "${GREEN}✓${NC} $2"
     else
         echo -e "${RED}✗${NC} $2"
-        ((errors++))
+        errors=$((errors + 1))
     fi
 }
 
@@ -221,7 +227,7 @@ warn() {
         echo -e "${GREEN}✓${NC} $2"
     else
         echo -e "${YELLOW}⚠${NC} $2"
-        ((warnings++))
+        warnings=$((warnings + 1))
     fi
 }
 
@@ -289,9 +295,19 @@ Add validation to pre-commit for config files:
       pass_filenames: false
 ```
 
+## Validation
+
+The skill has done its job when:
+
+- The reference document `docs/reference/quality-configuration.md` is found (or its absence is reported as an error and the run stops)
+- Each canonical value (indent style/size, line length, EOL) is compared against every downstream config, and mismatches are flagged
+- Pre-commit hooks are confirmed to be a subset of the CI checks (linting, type checking, and tests all present in CI)
+- The declared version is confirmed identical across the package manifest, `README.md`, `CHANGELOG.md`, and `SECURITY.md`
+- The validation report exits non-zero when any hard mismatch is found
+
 ## Related Skills
 
 - `setup-pre-commit` - Creates the configs this validates
-- `setup-adrs` - ADR-0002 documents quality practices
+- `setup-adrs` - Documents quality practices in an ADR
 
-> **Pattern Reference**: See [CONSISTENT-QUALITY-GATES](../../../docs/patterns/quality/consistent-quality-gates.md)
+> **Pattern Reference**: See [CONSISTENT-QUALITY-GATES](https://github.com/jrjsmrtn/ai-assisted-project-orchestration/blob/develop/docs/patterns/quality/consistent-quality-gates.md)

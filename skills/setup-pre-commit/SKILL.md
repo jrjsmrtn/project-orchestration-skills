@@ -3,7 +3,7 @@ name: setup-pre-commit
 description: Configure two-stage pre-commit hooks for quality automation. Use after bootstrap-project and setup-adrs, when adding quality gates to an existing project, or when standardizing quality automation.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.18"
+  version: "0.1.19"
 license: MIT
 ---
 
@@ -80,7 +80,7 @@ Single source of truth for all quality settings.
 - [ ] CI runs all checks marked "CI: Yes"
 ```
 
-> **Pattern Reference**: See [CONSISTENT-QUALITY-GATES](../../../docs/patterns/quality/consistent-quality-gates.md)
+> **Pattern Reference**: See [CONSISTENT-QUALITY-GATES](https://github.com/jrjsmrtn/ai-assisted-project-orchestration/blob/develop/docs/patterns/quality/consistent-quality-gates.md)
 
 ### Step 1: Create .editorconfig
 
@@ -245,9 +245,9 @@ Commit the ecosystem lockfile and install from it deterministically — the Open
 
 Add a pre-push/CI check that the lockfile is present and committed, and flag a manifest that declares only lower-bound (`>=` / `~>`) constraints with **no** committed lock — anyone installing from sdist/wheel without the lock then resolves loosely. In a Containerfile, avoid `COPY mix.lock*` (optional glob): it silently masks a missing lockfile.
 
-#### License compliance — REUSE (Public profile)
+#### License compliance — REUSE (public projects)
 
-For **Public** projects, make licensing machine-readable and *enforced* — not just prescribed in ADR-0002 §11. Provides the SPDX data an SBOM/CRA review expects. Scaffold a `LICENSES/` directory (one SPDX license text each), inline `SPDX-FileCopyrightText` + `SPDX-License-Identifier` headers, and a `REUSE.toml` to bulk-annotate docs and correctly attribute vendored/upstream fixtures (kept byte-pristine yet attributed):
+For **public** open-source projects, make licensing machine-readable and *enforced*, not just prescribed in prose. Provides the SPDX data an SBOM/CRA review expects. Scaffold a `LICENSES/` directory (one SPDX license text each), inline `SPDX-FileCopyrightText` + `SPDX-License-Identifier` headers, and a `REUSE.toml` to bulk-annotate docs and correctly attribute vendored/upstream fixtures (kept byte-pristine yet attributed):
 
 ```toml
 # REUSE.toml
@@ -606,7 +606,7 @@ This skill creates:
 - [ ] `{:mix_audit, ...}` added to `mix.exs` deps (Elixir CVE-audit prerequisite)
 - [ ] Dependency audit enforced in a CI `audit` job (not hook-only) + scheduled re-run
 - [ ] Ecosystem lockfile committed; frozen/locked installs in CI + containers
-- [ ] (Public profile) REUSE: `LICENSES/` + `REUSE.toml` + `reuse lint` hook and CI job
+- [ ] (Public projects) REUSE: `LICENSES/` + `REUSE.toml` + `reuse lint` hook and CI job
 
 ## Validation
 
@@ -654,6 +654,6 @@ git commit -m "chore: update pre-commit hook versions"
 
 ## Related Skills
 
-- `setup-adrs` - ADR-0002 documents these practices
+- `setup-adrs` - establishes the development-practices ADR that documents these quality gates
 - `validate-quality-config` - Validate configuration consistency
 - `harden-ci-workflows` - harden the CI audit job (SHA-pin actions, least-privilege permissions)

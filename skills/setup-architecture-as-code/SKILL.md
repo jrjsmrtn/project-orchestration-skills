@@ -3,7 +3,7 @@ name: setup-architecture-as-code
 description: Establish architecture-as-code practice using C4 modeling and Structurizr DSL. Use after bootstrap-project, when establishing architecture documentation, or when migrating from diagram-based to code-based architecture.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.18"
+  version: "0.1.19"
 license: MIT
 ---
 
@@ -376,9 +376,10 @@ The `docs` symlink allows workspace files to use `!adrs docs/adr` and `!docs doc
 ```bash
 # Start the local viewer (replaces Structurizr Lite)
 make view-architecture
-# or:
+# or (mount the project root, not just architecture/, so the docs symlink resolves):
 podman run --rm -p 8080:8080 \
-  -v "$(pwd)/architecture:/usr/local/structurizr" \
+  -v "$(pwd):/usr/local/structurizr:z" \
+  -e STRUCTURIZR_WORKSPACE_PATH=architecture \
   structurizr/structurizr local
 ```
 
@@ -388,21 +389,20 @@ Then open http://localhost:8080
 
 ```bash
 make validate-architecture
-# or:
+# or (mount the project root so !adrs/!docs symlinks resolve):
 podman run --rm \
-  -v "$(pwd):/usr/local/structurizr" \
-  -w /usr/local/structurizr/architecture \
-  structurizr/structurizr validate -workspace workspace.dsl
+  -v "$(pwd):/work:z" \
+  structurizr/structurizr validate -w /work/architecture/workspace.dsl
 ```
 
 ### Export Diagrams
 
 ```bash
 make export-architecture
-# or:
+# or (mount the project root so !adrs/!docs symlinks resolve):
 podman run --rm \
-  -v "$(pwd)/architecture:/usr/local/structurizr" \
-  structurizr/structurizr export -workspace workspace.dsl -format plantuml
+  -v "$(pwd):/work:z" \
+  structurizr/structurizr export -w /work/architecture/workspace.dsl -format plantuml
 ```
 
 ## C4 Model Levels
@@ -447,37 +447,34 @@ Add to project `Makefile`:
 validate-architecture:
 	@echo "Validating architecture model..."
 	podman run --rm \
-		-v "$(PWD):/usr/local/structurizr" \
-		-w /usr/local/structurizr/architecture \
-		structurizr/structurizr validate -workspace workspace.dsl
+		-v "$(PWD):/work:z" \
+		structurizr/structurizr validate -w /work/architecture/workspace.dsl
 
 inspect-architecture:
 	@echo "Inspecting architecture model (Checkstyle-style rules)..."
 	podman run --rm \
-		-v "$(PWD):/usr/local/structurizr" \
-		-w /usr/local/structurizr/architecture \
-		structurizr/structurizr inspect -workspace workspace.dsl -severity error,warning
+		-v "$(PWD):/work:z" \
+		structurizr/structurizr inspect -w /work/architecture/workspace.dsl -severity error,warning
 
 view-architecture:
 	@echo "Starting Structurizr local viewer on http://localhost:8080..."
 	@echo "Press Ctrl+C to stop"
 	podman run --rm -p 8080:8080 \
-		-v "$(PWD)/architecture:/usr/local/structurizr" \
+		-v "$(PWD):/usr/local/structurizr:z" \
+		-e STRUCTURIZR_WORKSPACE_PATH=architecture \
 		structurizr/structurizr local
 
 export-architecture:
 	@echo "Exporting architecture to PlantUML..."
 	podman run --rm \
-		-v "$(PWD):/usr/local/structurizr" \
-		-w /usr/local/structurizr/architecture \
-		structurizr/structurizr export -workspace workspace.dsl -format plantuml -output diagrams/
+		-v "$(PWD):/work:z" \
+		structurizr/structurizr export -w /work/architecture/workspace.dsl -format plantuml -output /work/architecture/diagrams/
 
 export-architecture-json:
 	@echo "Exporting architecture to JSON..."
 	podman run --rm \
-		-v "$(PWD):/usr/local/structurizr" \
-		-w /usr/local/structurizr/architecture \
-		structurizr/structurizr export -workspace workspace.dsl -format json
+		-v "$(PWD):/work:z" \
+		structurizr/structurizr export -w /work/architecture/workspace.dsl -format json
 ```
 
 ### Step 6: Validate and Commit
@@ -485,10 +482,9 @@ export-architecture-json:
 ```bash
 # Validate the model
 make validate-architecture
-# or manually:
-podman run --rm -v "$(pwd):/usr/local/structurizr" \
-  -w /usr/local/structurizr/architecture \
-  structurizr/structurizr validate -workspace workspace.dsl
+# or manually (mount the project root so !adrs/!docs symlinks resolve):
+podman run --rm -v "$(pwd):/work:z" \
+  structurizr/structurizr validate -w /work/architecture/workspace.dsl
 
 # View to verify (optional)
 make view-architecture

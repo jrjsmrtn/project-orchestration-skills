@@ -3,7 +3,7 @@ name: analyze-project
 description: Conduct SPARK methodology analysis for new project inception. Use at the beginning of a new project, when evaluating significant features, before bootstrap-project to validate viability, or when pivoting an existing project.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.18"
+  version: "0.1.19"
 license: MIT
 ---
 
@@ -121,7 +121,7 @@ Every artifact should reference an audience ID:
 
 **AI Assistance**: AI can suggest audience consolidation and identify gaps in artifact coverage.
 
-> **Pattern Reference**: See [AUDIENCE-DRIVEN ARTIFACTS](../../../docs/patterns/inception/audience-driven-artifacts.md)
+> **Pattern Reference**: See [AUDIENCE-DRIVEN ARTIFACTS](https://github.com/jrjsmrtn/ai-assisted-project-orchestration/blob/develop/docs/patterns/inception/audience-driven-artifacts.md)
 
 ### Phase 2: Problem Definition
 

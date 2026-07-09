@@ -3,7 +3,7 @@ name: plan-sprint
 description: Create a sprint plan for a new development cycle. Use when starting a new sprint, after completing wrapup-sprint, or when initializing Sprint 1 for a new project.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.18"
+  version: "0.1.19"
 license: MIT
 ---
 
@@ -237,18 +237,18 @@ This skill creates:
 ## Validation
 
 ```bash
-# Verify sprint plan exists
-ls docs/sprints/sprint-NNNN-plan.md
+# Verify sprint plan exists (glob matches any zero-padded sprint number)
+ls docs/sprints/sprint-*-plan.md
 
 # Verify CLAUDE.md updated
 grep "Current Sprint" CLAUDE.md
 
 # Verify sprint index updated
-grep "Sprint N" docs/sprints/README.md
+grep "Active Sprint" docs/sprints/README.md
 ```
 
 ## Related Skills
 
 - `wrapup-sprint` - Complete sprint with retrospective
 - `bootstrap-project` - Initial project setup (includes Sprint 1)
-- `setup-adrs` - ADR-0002 documents sprint practices
+- `setup-adrs` - Establishes the ADR sequence, including the decision record that documents development and sprint practices

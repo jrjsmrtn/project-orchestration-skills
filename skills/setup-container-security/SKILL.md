@@ -3,7 +3,7 @@ name: setup-container-security
 description: Harden container images (Containerfile/Dockerfile) for supply-chain security — digest-pinned bases, non-root runtime, verified artifact fetches, hadolint/shellcheck linting, and grype + syft SBOM scanning. Use when a project builds a container image, before publishing an image to a registry, or when auditing container security.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.18"
+  version: "0.1.19"
 license: MIT
 ---
 
@@ -14,14 +14,14 @@ Harden a project's container image against supply-chain attack: pin the base, ve
 ## When to Use
 
 - When a project builds a container image (has a `Containerfile`/`Dockerfile`)
-- Before publishing an image to a registry (a `ships-artifacts` project)
+- Before publishing an image to a registry (a project that ships the image as a release artifact)
 - When auditing container security, or when a supply-chain review flags container gaps
 
 ## Required Inputs
 
 1. The project's `Containerfile`/`Dockerfile`(s)
 2. Base image(s) and target registry
-3. Whether the project **publishes** the image (`ships-artifacts` marker) — gates SBOM-as-release-asset + signing, delegated to `wrapup-sprint`
+3. Whether the project **publishes** the image (ships it as a release artifact) — gates SBOM-as-release-asset + signing, delegated to `wrapup-sprint`
 
 ## The Threat
 
@@ -41,7 +41,7 @@ grep -nE '^USER ' Containerfile Dockerfile 2>/dev/null || echo "no USER — root
 grep -nE 'curl.*\|\s*(sh|bash)|wget .*http' Containerfile Dockerfile 2>/dev/null
 ```
 
-The recurring "looks fine at a glance" anti-pattern (a real in-fleet example): a `-slim` base on a **mutable tag**, **no `USER`** (root runtime), and a build-time binary/model download with **no checksum** — despite otherwise-good habits (`--no-install-recommends`, a HEALTHCHECK, a `.containerignore`). It fails the three load-bearing checks: digest pinning, non-root, and artifact integrity.
+The recurring "looks fine at a glance" anti-pattern (a real-world example): a `-slim` base on a **mutable tag**, **no `USER`** (root runtime), and a build-time binary/model download with **no checksum** — despite otherwise-good habits (`--no-install-recommends`, a HEALTHCHECK, a `.containerignore`). It fails the three load-bearing checks: digest pinning, non-root, and artifact integrity.
 
 ### Step 2: Pin the base image by digest
 
@@ -188,7 +188,7 @@ Note: Podman's default OCI image format drops `HEALTHCHECK` — carry a duplicat
 
 Add a `docker` ecosystem to `.github/dependabot.yml` so base-image digests get weekly bump PRs (see `bootstrap-project`), each validated by the grype scan job.
 
-### Step 11: Publishing (`ships-artifacts`) and ADR
+### Step 11: Publishing and ADR
 
 For projects that publish the image: attach the SBOM as a release asset and sign the image with cosign keyless — delegated to `wrapup-sprint`'s release-provenance step. Record the container-security decisions (which checks run, the grype-policy rationale, and any documented exceptions like a base-digest-pin or gosu-drop root) in an ADR.
 
@@ -223,7 +223,7 @@ test -s sbom.spdx.json && test -s sbom.cdx.json && echo "SBOM ok"
 ## Related Skills
 
 - `harden-ci-workflows` - harden the image build/publish workflow (SHA-pin actions, least-privilege, cosign-installer)
-- `wrapup-sprint` - release-time SBOM + cosign signing for `ships-artifacts` images
+- `wrapup-sprint` - release-time SBOM + cosign signing for published images
 - `setup-pre-commit` - lockfile enforcement and the hadolint/shellcheck hooks
-- `bootstrap-project` - the distribution profile / `ships-artifacts` marker; Dependabot config
+- `bootstrap-project` - the distribution profile (whether the project publishes artifacts); Dependabot config
 - `setup-adrs` - record the container-security checks and documented exceptions

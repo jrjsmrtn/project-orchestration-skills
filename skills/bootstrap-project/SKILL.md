@@ -3,7 +3,7 @@ name: bootstrap-project
 description: Bootstrap a new project at a chosen graduation tier (t0 minimum, t1 decision-tracked, t2 full pattern language) following AI-Assisted Project Orchestration best practices. Use when starting a new software project, promoting an existing project to a higher tier, or converting an existing project for AI-assisted development.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.18"
+  version: "0.1.19"
 license: MIT
 ---
 
@@ -306,9 +306,9 @@ Create `docs/roadmap/roadmap.md` with an initial project roadmap:
 ## Tracker Boundary
 
 _Single source of truth for tactical status._ While the project is **Private / in-repo only**, this
-roadmap is canonical. If it goes **Public** and graduates its backlog to a forge tracker (via
-`graduate-backlog`), record the split here: what stays canonical in-repo (this roadmap, ADRs, sprint
-retrospectives) vs. what the tracker owns (per-issue/milestone status). Default once graduated: the
+roadmap is canonical. If it goes **Public** and moves its backlog to a forge issue tracker,
+record the split here: what stays canonical in-repo (this roadmap, ADRs, sprint
+retrospectives) vs. what the tracker owns (per-issue/milestone status). Default once moved: the
 tracker owns tactical status; this Sprint History stays the narrative/version ledger.
 ```
 
@@ -353,24 +353,24 @@ model {
 ```
 docs/
 ├── tutorials/
-│   └── getting-started.md     # A1: Primary audience
+│   └── getting-started.md     # Primary audience (end users)
 ├── howto/
-│   └── deployment.md          # A3: Operational audience
+│   └── deployment.md          # Operational audience (operators)
 ├── reference/
-│   └── api.md                 # A2: Integration audience
+│   └── api.md                 # Integration audience (API consumers)
 └── explanation/
-    └── architecture.md        # A4: Contribution audience
+    └── architecture.md        # Contribution audience (contributors)
 ```
 
 **4. Documentation Frontmatter Template**:
 ```markdown
 ---
-audience: A1  # Reference to Audience Registry
+audience: A1  # audience ID defined in docs/reference/audience-registry.md (A1 = primary audience)
 title: Getting Started
 ---
 ```
 
-> **Pattern Reference**: See [AUDIENCE-DRIVEN ARTIFACTS](../../../docs/patterns/inception/audience-driven-artifacts.md)
+> **Pattern Reference**: See [AUDIENCE-DRIVEN ARTIFACTS](https://github.com/jrjsmrtn/ai-assisted-project-orchestration/blob/develop/docs/patterns/inception/audience-driven-artifacts.md)
 
 ### Phase 8: Invoke Related Skills
 
@@ -422,7 +422,13 @@ shell-escaping is in scope" or "no runtime, no network, no deps — the attack s
 integrity of the published artifact".]
 ```
 
-Then enable **private vulnerability reporting** on the repo (GitHub: Settings → Code security → Private vulnerability reporting) so the Advisories link works. The fuller go-public checklist (CONTRIBUTING, CODE_OF_CONDUCT, LICENSE verification, CI) is owned by the `public-release` skill (`oss-maintenance`) at the Private→Public graduation gate — this phase covers only the security policy.
+Then enable **private vulnerability reporting** on the repo (GitHub: Settings → Code security → Private vulnerability reporting) so the Advisories link works. Verify it is on with (substitute `{owner}`/`{repo}`):
+
+```bash
+gh api repos/{owner}/{repo}/private-vulnerability-reporting --jq ".enabled"   # -> true
+```
+
+The fuller go-public checklist (CONTRIBUTING, CODE_OF_CONDUCT, LICENSE verification, CI) is owned by the `public-release` skill (`oss-maintenance`) at the Private→Public graduation gate — this phase covers only the security policy.
 
 ### Phase 10: Dependency Update Automation (Dependabot)
 

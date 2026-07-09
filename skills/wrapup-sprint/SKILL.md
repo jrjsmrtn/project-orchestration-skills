@@ -3,7 +3,7 @@ name: wrapup-sprint
 description: Complete a sprint with retrospective, changelog update, release tagging, and (for `ships-artifacts` projects) release provenance — SBOM, SLSA, and signing. Use when sprint work is done, at the end of a sprint cycle, or before starting a new sprint.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.18"
+  version: "0.1.19"
 license: MIT
 ---
 
@@ -21,6 +21,11 @@ Complete a sprint with retrospective, changelog update, and release tagging.
 
 1. **Sprint number** (e.g., 3)
 2. **Version to release** (e.g., 0.1.5)
+
+In the commands below, substitute the placeholders throughout: `NNNN` is the zero-padded
+sprint number in filenames (e.g. `sprint-0003-plan.md`), `N` is the bare sprint number in
+messages (e.g. `Sprint 3`), and `0.1.x` / `0.1.y` are the version being released and the
+previous version (e.g. `0.1.5` / `0.1.4`). They are not literal.
 
 ## Prerequisites
 

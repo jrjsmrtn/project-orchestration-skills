@@ -3,7 +3,7 @@ name: setup-adrs
 description: Create the foundational Architecture Decision Record (ADR) sequence for a new project. Use after bootstrap-project, when establishing decision documentation, or when standardizing ADR practices.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.18"
+  version: "0.1.19"
 license: MIT
 ---
 
@@ -43,14 +43,14 @@ Every project should have these foundational ADRs:
 
 ADRs serve the **Contribution** audience category (maintainers, contributors, future architects). They provide the "understanding-oriented" content in Diátaxis terms, explaining *why* decisions were made.
 
-If an Audience Registry exists from SPARK analysis, ADRs should be tagged:
+If a SPARK Audience Registry exists for the project, tag ADRs with the registry's identifier for the Contribution audience:
 ```markdown
 ---
-audience: A4  # Contribution audience
+audience: contribution  # or the project's registry ID for maintainers/contributors
 ---
 ```
 
-> **Pattern Reference**: See [AUDIENCE-DRIVEN ARTIFACTS](../../../docs/patterns/inception/audience-driven-artifacts.md)
+> **Pattern Reference**: See [AUDIENCE-DRIVEN ARTIFACTS](https://github.com/jrjsmrtn/ai-assisted-project-orchestration/blob/develop/docs/patterns/inception/audience-driven-artifacts.md)
 
 ## ADR Numbering Convention
 
@@ -240,7 +240,7 @@ ADRs in `docs/adr/`, sprint plans in `docs/sprints/`, roadmap in `docs/roadmap/`
 
 ### 11. Licensing and Copyright
 
-*(Public-profile control — enforce for open-sourced projects; skip for Private.)*
+*(Enforce for projects intended for open-source release; skip for closed-source/private ones.)*
 
 - **REUSE compliance** ([reuse.software](https://reuse.software/)) for machine-readable copyright and license declarations
 - SPDX headers (`SPDX-FileCopyrightText`, `SPDX-License-Identifier`) on source files
@@ -493,7 +493,7 @@ foundational:
 
 ## Third-Party / Aggregate Licensing (LICENSING.md)
 
-Section 11 covers the project's **own** license (REUSE/SPDX). This covers **third-party** licensing for projects that **vendor, bundle, statically link, or ship a container/WASM image** containing others' code — a Public-profile concern. Produce a `LICENSING.md` and record the decision in an ADR.
+Section 11 covers the project's **own** license (REUSE/SPDX). This covers **third-party** licensing for projects that **vendor, bundle, statically link, or ship a container/WASM image** containing others' code — a concern when the project is distributed publicly. Produce a `LICENSING.md` and record the decision in an ADR.
 
 A permissive wrapper does **not** make the shipped artifact permissive. Identify the **copyleft floor** — the most restrictive license governing the aggregate:
 
@@ -550,7 +550,7 @@ Verify successful ADR creation:
 2. ADR-0002 is customized for the project's technology stack
 3. ADR-0003 includes alternatives considered and rationale
 4. ADR-0004 exists only for Infrastructure/Hybrid projects
-5. README.md index is accurate
+5. `docs/adr/index.yml` is accurate (not a `README.md` — the `!adrs` importer would choke on non-ADR markdown in `docs/adr/`)
 6. Dates are correct (use `date +%Y-%m-%d`)
 
 ## Related Skills
