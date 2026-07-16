@@ -8,6 +8,17 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.20] - 2026-07-16
+
+### Changed
+
+- `setup-container-security`: reframed the containerization stance from "Podman-first,
+  Docker-compatible" to **OCI-compliant first** — target the OCI image spec so the artifact
+  runs on any conformant runtime; build/test distributables with podman, stay Docker-compatible.
+- `setup-architecture-as-code`: normalised the Structurizr `inspect` severity flag `-severity` →
+  `-s`/`--severity` in the `inspect-architecture` Makefile target (matches the verified vNext CLI,
+  `structurizr v2026.03.06`).
+
 ## [0.1.19] - 2026-07-10
 
 ### Fixed

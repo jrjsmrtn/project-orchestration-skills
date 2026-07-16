@@ -3,13 +3,13 @@ name: setup-container-security
 description: Harden container images (Containerfile/Dockerfile) for supply-chain security — digest-pinned bases, non-root runtime, verified artifact fetches, hadolint/shellcheck linting, and grype + syft SBOM scanning. Use when a project builds a container image, before publishing an image to a registry, or when auditing container security.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.19"
+  version: "0.1.20"
 license: MIT
 ---
 
 # Setup Container Security
 
-Harden a project's container image against supply-chain attack: pin the base, verify what you fetch, drop privileges, and scan what you ship. Podman-first, Docker-compatible (`Dockerfile`/`Containerfile` are interchangeable below).
+Harden a project's container image against supply-chain attack: pin the base, verify what you fetch, drop privileges, and scan what you ship. **OCI-compliant first** — target the OCI image spec so the artifact runs on any conformant runtime (podman, Docker, containerd). Build and test distributable images with **podman** (rootless, daemonless, OCI output by default), and stay Docker-compatible (`Dockerfile`/`Containerfile` are interchangeable below).
 
 ## When to Use
 

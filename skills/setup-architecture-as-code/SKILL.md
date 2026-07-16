@@ -3,7 +3,7 @@ name: setup-architecture-as-code
 description: Establish architecture-as-code practice using C4 modeling and Structurizr DSL. Use after bootstrap-project, when establishing architecture documentation, or when migrating from diagram-based to code-based architecture.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.19"
+  version: "0.1.20"
 license: MIT
 ---
 
@@ -454,7 +454,7 @@ inspect-architecture:
 	@echo "Inspecting architecture model (Checkstyle-style rules)..."
 	podman run --rm \
 		-v "$(PWD):/work:z" \
-		structurizr/structurizr inspect -w /work/architecture/workspace.dsl -severity error,warning
+		structurizr/structurizr inspect -w /work/architecture/workspace.dsl -s error,warning
 
 view-architecture:
 	@echo "Starting Structurizr local viewer on http://localhost:8080..."
