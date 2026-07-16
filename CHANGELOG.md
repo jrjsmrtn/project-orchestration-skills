@@ -8,7 +8,39 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
-## [0.1.20] - 2026-07-16
+## [0.1.21] - 2026-07-16
+
+### Added
+
+- New skill **`graduate-backlog`** (moved from `oss-maintenance`, now `project-maintenance-skills` —
+  workspace ADR-0008 + ADR-0007 amendment). Graduates an in-repo backlog (roadmap phases, sprint
+  deliverables, ADRs) onto a forge issue tracker at a **thin-hybrid** default: milestones from open
+  phases, back-linked issues from current-sprint deliverables, and a recorded Work-Organization
+  Boundary ADR naming the single source of truth. Works on GitHub (`gh`), GitLab (`glab`), and
+  Forgejo/Gitea (`tea`), including **self-hosted/internal instances**. Plugin roster 10 → 11 skills.
+- `graduate-backlog` creates the minimal `enhancement`/`bug`/`documentation` + `priority: *` labels
+  it needs, so it works standalone. `incoming-issue` (project-maintenance-skills) becomes an
+  optional enrichment for Public projects rather than a hard prerequisite.
+
+### Changed
+
+- **`graduate-backlog`'s trigger is decoupled from the Public distribution profile.** Graduation is
+  driven by **team scale** — the same signal as the t0→t1 tier bump ("more than one contributor") —
+  not by exposure. The old `Not for: Private projects` refusal is removed: a corporate team on an
+  internal GitLab needs a board without ever open-sourcing. Exposure gates *compliance controls*,
+  not *work organization* (ADR-0006).
+- `wrapup-sprint` Step 7 and `bootstrap-project`'s roadmap "Tracker Boundary" template now reference
+  `graduate-backlog` within this plugin rather than reaching into the maintenance plugin, resolving
+  a dependency inversion: this plugin owned the tracker-boundary rule while the skill establishing
+  it lived a layer up.
+- `bootstrap-project`: `oss-maintenance` references renamed to `project-maintenance-skills`.
+
+### Fixed
+
+- `graduate-backlog`'s Forge Command Reference verified against the installed CLIs (`glab` 1.107.0,
+  `tea` go-sdk v0.15.1) rather than asserted — the `tea` guidance was previously hedged because the
+  binary wasn't available when it was written. Added verified `label list`/`label create` rows for
+  all three forges.
 
 ### Changed
 

@@ -62,6 +62,7 @@ gh skill install jrjsmrtn/project-orchestration-skills --dir ~/.vibe/skills
 |-------|-------------|
 | **plan-sprint** | Create sprint plans with backlog and goals |
 | **wrapup-sprint** | Complete sprints with retrospective and release |
+| **graduate-backlog** | Graduate the in-repo backlog onto a forge tracker (GitHub/GitLab/Forgejo, incl. self-hosted) at a thin-hybrid default, once it outgrows one contributor |
 
 ## Usage
 
@@ -78,6 +79,7 @@ After installation, invoke skills using slash commands:
 /setup-container-security
 /plan-sprint
 /wrapup-sprint
+/graduate-backlog
 ```
 
 Or reference them naturally in conversation - Claude will activate the appropriate skill based on context.

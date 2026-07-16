@@ -3,7 +3,7 @@ name: bootstrap-project
 description: Bootstrap a new project at a chosen graduation tier (t0 minimum, t1 decision-tracked, t2 full pattern language) following AI-Assisted Project Orchestration best practices. Use when starting a new software project, promoting an existing project to a higher tier, or converting an existing project for AI-assisted development.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.20"
+  version: "0.1.21"
 license: MIT
 ---
 
@@ -72,7 +72,7 @@ This skill implements the **Tiered Bootstrap** pattern. Each tier is a strict su
 | **Public** | open-sourced on a public forge **and** licensed | LICENSE/REUSE, `SECURITY.md` + coordinated disclosure (Phase 9), OpenSSF Scorecard aspirational |
 | **`ships-artifacts`** (marker) | publishes built packages/images to a registry, or signed release binaries | + SLSA provenance, SBOM, signing, trusted publishing (via `harden-ci-workflows`, `wrapup-sprint`) |
 
-Going Public *is* making the source redistributable (licensing is part of the gate), so there is no separate "distributed" level. **`ships-artifacts` is a boolean, not a rung** — set it when going public, later, or never. Controls attach to the profile, not the tier, so a project pays only for its actual exposure. Record the profile in CLAUDE.md `## Project Context`; promotion to Public is the `public-release` graduation gate (`oss-maintenance`).
+Going Public *is* making the source redistributable (licensing is part of the gate), so there is no separate "distributed" level. **`ships-artifacts` is a boolean, not a rung** — set it when going public, later, or never. Controls attach to the profile, not the tier, so a project pays only for its actual exposure. Record the profile in CLAUDE.md `## Project Context`; promotion to Public is the `public-release` graduation gate (`project-maintenance-skills`).
 
 This axis maps to recognized frameworks: **Public** → EU CRA "open-source steward" duties + OpenSSF Best Practices; **`ships-artifacts`** → SLSA / EEF Ægis trusted publishing. Treat these as guidance, not legal advice. The `commercial` case (placing on the EU market for pay), which triggers full CRA manufacturer obligations, is out of scope here.
 
@@ -305,11 +305,12 @@ Create `docs/roadmap/roadmap.md` with an initial project roadmap:
 
 ## Tracker Boundary
 
-_Single source of truth for tactical status._ While the project is **Private / in-repo only**, this
-roadmap is canonical. If it goes **Public** and moves its backlog to a forge issue tracker,
-record the split here: what stays canonical in-repo (this roadmap, ADRs, sprint
-retrospectives) vs. what the tracker owns (per-issue/milestone status). Default once moved: the
-tracker owns tactical status; this Sprint History stays the narrative/version ledger.
+_Single source of truth for tactical status._ While the backlog lives **in-repo only**, this
+roadmap is canonical. Once more than one contributor needs to see and claim work, the backlog may
+graduate to a forge issue tracker (`graduate-backlog`) — public, or an internal/self-hosted one.
+Record the split here: what stays canonical in-repo (this roadmap, ADRs, sprint retrospectives) vs.
+what the tracker owns (per-issue/milestone status). Default once moved: the tracker owns tactical
+status; this Sprint History stays the narrative/version ledger.
 ```
 
 The roadmap is a living document — update it as phases complete and new ones emerge.
@@ -428,7 +429,7 @@ Then enable **private vulnerability reporting** on the repo (GitHub: Settings �
 gh api repos/{owner}/{repo}/private-vulnerability-reporting --jq ".enabled"   # -> true
 ```
 
-The fuller go-public checklist (CONTRIBUTING, CODE_OF_CONDUCT, LICENSE verification, CI) is owned by the `public-release` skill (`oss-maintenance`) at the Private→Public graduation gate — this phase covers only the security policy.
+The fuller go-public checklist (CONTRIBUTING, CODE_OF_CONDUCT, LICENSE verification, CI) is owned by the `public-release` skill (`project-maintenance-skills`) at the Private→Public graduation gate — this phase covers only the security policy.
 
 ### Phase 10: Dependency Update Automation (Dependabot)
 
@@ -455,7 +456,7 @@ updates:
         update-types: ["version-update:semver-major"]   # digest re-pin only
 ```
 
-Limits worth documenting: run-step images invoked *inside* a workflow or Makefile (not a `FROM`/`uses:`) are invisible to Dependabot and must be hand-pinned. This phase generates **config**; PR *triage* (reviewing and merging update PRs) is the `oss-maintenance` workflow's job, not this skill's.
+Limits worth documenting: run-step images invoked *inside* a workflow or Makefile (not a `FROM`/`uses:`) are invisible to Dependabot and must be hand-pinned. This phase generates **config**; PR *triage* (reviewing and merging update PRs) is the `project-maintenance-skills` workflow's job, not this skill's.
 
 ## Graduation (Tier Promotion)
 
@@ -544,6 +545,6 @@ Verify successful bootstrap based on tier:
 - `setup-pre-commit` - Configure pre-commit hooks
 - `setup-architecture-as-code` - Create architecture model
 - `plan-sprint` - Create initial sprint plan
-- `public-release` (oss-maintenance) - Private→Public graduation gate (full go-public checklist)
+- `public-release` (project-maintenance-skills) - Private→Public graduation gate (full go-public checklist)
 - `harden-ci-workflows` - CI hardening for Public + `ships-artifacts` projects
 - `setup-container-security` - container image hardening (digest pins, non-root, grype/SBOM)
