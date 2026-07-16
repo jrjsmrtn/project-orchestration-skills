@@ -1,0 +1,72 @@
+# QA baseline for the Skills portfolio — CANONICAL REFERENCE
+#
+# This file is the source of truth. Every plugin/marketplace repo in the
+# portfolio carries a byte-identical copy as its own `lefthook.yml`, and
+# `scripts/check-plugin-consistency.py` fails if any copy drifts from this one.
+#
+# WHY A COPY AND NOT AN INCLUDE
+#   lefthook supports `remotes:` and `extends:`, and neither works here:
+#     - `remotes:` would point at this meta-repo, which lives ONLY on the private
+#       git server. External contributors to the public plugin repos could not
+#       fetch it, so their hooks would silently do nothing.
+#     - `extends: ../qa/...` resolves to a sibling path that exists only in this
+#       workspace layout, not in a fresh clone of a single plugin repo.
+#   Each repo's config must therefore stand alone. The consistency gate replaces
+#   the include with a drift check.
+#
+# INSTALL (per repo, once per clone — hooks are not version-controlled):
+#   lefthook install
+#
+# See docs/adr/0002-govern-skills-workspace-as-meta-project.md
+# ---------------------------------------------------------------------------
+
+pre-commit:
+  parallel: true
+  commands:
+    # Secret scanning. Blocks the commit on detection (fail-closed).
+    #
+    # Homelab rules (hostnames, domain, IPs, git server, ssh port, username,
+    # MAC addresses) live in a LOCAL gitleaks config resolved via the
+    # GITLEAKS_CONFIG environment variable — deliberately NOT committed, because
+    # the rules embed the very patterns they exist to keep out of public repos.
+    # Without that env var (CI, a contributor's machine, a fresh checkout) only
+    # gitleaks' default rules apply: real credentials are still caught, homelab
+    # identifiers are not. CI is the enforcement backstop, not this hook.
+    #
+    # Fail-open if gitleaks is absent: these repos are public, and a missing
+    # local tool must not block an external contribution.
+    gitleaks:
+      run: |
+        if command -v gitleaks >/dev/null 2>&1; then
+          gitleaks protect --staged --verbose || {
+            echo ""
+            echo "⚠️  gitleaks detected secrets or homelab details in staged changes."
+            echo "    Commit blocked. To bypass (NOT recommended): git commit --no-verify"
+            exit 1
+          }
+          echo "✓ gitleaks: no secrets detected"
+        else
+          echo "⚠️  gitleaks not found — secret scan SKIPPED (install it: sudo port install gitleaks)"
+        fi
+
+    # Manifest spec compliance: plugin.json / marketplace.json / SKILL.md
+    # frontmatter, against the installed Claude Code CLI's schema.
+    #
+    # Offline and auth-free (verified: runs with no HOME and no API key).
+    # Complements the cross-plugin consistency gate with ZERO overlap — verified
+    # 2026-07-16: `claude plugin validate` catches neither a version-lockstep
+    # mismatch nor name != directory, which is precisely what the gate exists for.
+    # This catches the other half: manifest drift as the Claude Code spec evolves.
+    #
+    # Note it exits 0 on warnings, so as a gate it blocks only hard errors.
+    # Fail-open if the CLI is absent, for the same contributor reason as above.
+    plugin-validate:
+      glob:
+        - ".claude-plugin/*.json"
+        - "skills/**/SKILL.md"
+      run: |
+        if command -v claude >/dev/null 2>&1; then
+          claude plugin validate .
+        else
+          echo "⚠️  claude CLI not found — manifest validation SKIPPED"
+        fi
