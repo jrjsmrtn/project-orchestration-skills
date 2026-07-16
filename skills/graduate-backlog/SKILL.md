@@ -3,7 +3,7 @@ name: graduate-backlog
 description: Graduate a project's in-repo backlog (roadmap phases, sprint deliverables, ADRs) onto a forge issue tracker at a thin-hybrid default, once the backlog outgrows a single contributor. Use when a team needs to see and claim work that currently lives only in docs/roadmap and docs/sprints, when a repo has a mature in-repo roadmap but an empty tracker, when open-sourcing a project, or when deciding what work should stay in-repo versus live on a GitHub, GitLab, Codeberg/Forgejo, or self-hosted internal tracker.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.24"
+  version: "0.1.25"
 license: MIT
 ---
 
@@ -16,16 +16,19 @@ outgrows a single contributor. The orchestration skills author a rich in-repo ba
 than one person needs to see and claim that work, they need a tracker — but that transform is
 manual and uncodified.
 
-This skill performs it **conservatively**. The proven equilibrium in practice is
-**thin-hybrid**: planning stays in-repo, the tracker holds only incoming/reactive work plus — at
-most — the current milestone's tactical items. The default here is *light externalization*, not a
-board build-out. A richer board is opt-in, justified by a real need for roadmap visibility.
+This skill performs it **conservatively**. The default is **thin-hybrid**: planning stays in-repo,
+and the tracker holds only incoming/reactive work plus — at most — the current milestone's tactical
+items. That is *light externalization*, not a board build-out. A richer board is opt-in (the
+`roadmap-visible` level), justified by a real need for roadmap visibility.
 
 > **The trigger is team scale, not exposure.** Graduation is driven by *who needs to see the work*
 > — the same signal as the t0→t1 tier bump ("more than one contributor"). It is **not** gated on
 > the **Public** distribution profile: a corporate team on an internal GitLab needs a board without
 > ever open-sourcing, and a solo public repo may never need one. Exposure gates *compliance
-> controls*, not *work organization* (workspace decision records ADR-0006, ADR-0007, ADR-0008).
+> controls*, not *work organization*. (Workspace decision records: "Distribution-Profile Axis for
+> Compliance Qualification", "Work-Organization Graduation: Thin-Hybrid Backlog Externalization",
+> "Plugin Taxonomy by Lifecycle, Not Exposure" — cited by title because bare numbers would collide
+> with the *target project's* own ADR sequence, which Phase 3 writes into.)
 
 > **Establish vs operate.** This skill *establishes* tracker structure from the backlog;
 > `incoming-issue` (**project-maintenance-skills**) *operates* it afterward. Where that plugin is
@@ -38,7 +41,7 @@ board build-out. A richer board is opt-in, justified by a real need for roadmap 
 - When a project's backlog outgrows one contributor and the team needs claimable work items
 - When a repo has a mature in-repo roadmap but an empty or default-only tracker
 - When deciding the **hybrid boundary** — what stays canonical in-repo vs what the tracker owns
-- At the `public-release` go/no-go gate, deciding how work is organized publicly
+- At the `public-release` go/no-go gate (project-maintenance-skills), deciding how work is organized publicly
 - Re-running incrementally after new phases or sprints land (the skill is idempotent)
 
 **Not for:** Solo projects with no collaborators — the backlog stays in-repo; say so and stop.
@@ -49,13 +52,13 @@ already-shipped work as issues.
 
 1. **Repository** — the forge and `owner/repo`, auto-detected from git remotes.
 2. **Scope** — what to run:
-   - `plan` — analyze the in-repo backlog and emit the hybrid-boundary decision; **no writes** (dry run)
-   - `milestones` — seed milestones from **open** roadmap phases
-   - `issues` — create issues from **current-sprint open deliverables**
-   - `full` — `plan` → `milestones` → `issues` in sequence, after confirming the plan
+   - `plan` — Phases 1–2: analyze the in-repo backlog and emit the hybrid-boundary decision; **no writes** (dry run)
+   - `milestones` — Phase 4: seed milestones from **open** roadmap phases
+   - `issues` — Phase 5: create labels, then issues from **current-sprint open deliverables**
+   - `full` — Phases 1–6 in sequence: plan → confirm → record the boundary ADR (Phase 3) → milestones → issues → reconcile (Phase 6). Phases 3 and 6 are what produce the skill's headline output and anti-drift rule, so `full` is the only scope that satisfies this skill's own Validation.
 3. **Externalization level** (default `thin`):
    - `thin` — milestones for open phases + issues for current-sprint deliverables only (default)
-   - `roadmap-visible` — additionally mirror open roadmap phases as tracked issues for public visibility
+   - `roadmap-visible` — Phase 5b: additionally mirror open roadmap phases as tracked issues, for team and stakeholder visibility of the longer arc
 
 ## Workflow
 
@@ -81,8 +84,9 @@ already-shipped work as issues.
    ```bash
    git shortlog -sn --since="6 months ago" HEAD | head
    ```
-   Proceed if any of these hold: more than one recent committer; the project is Public and accepts
-   external contributions; or the maintainer states that collaborators need claimable work.
+   Proceed if any of these hold: more than one recent committer; the project accepts contributions
+   from beyond the maintainer (an open contributor base is a team, whatever the exposure); or the
+   maintainer states that collaborators need claimable work.
    **If it is a genuinely solo project with no collaborators, stop** — a tracker adds ceremony
    without a reader. Say so plainly rather than seeding an audience-free board.
 
@@ -94,7 +98,7 @@ already-shipped work as issues.
 
 4. **Check tracker preconditions:** do the labels this skill maps onto exist?
    ```bash
-   gh label list   # glab label list | tea labels list
+   gh label list   # glab label list | tea labels ls
    ```
    Type labels (`enhancement` / `bug` / `documentation`) are GitHub defaults and usually exist
    already; on GitLab/Forgejo they may not. The `priority: *` labels rarely exist anywhere.
@@ -165,13 +169,39 @@ gh api "repos/{owner}/{repo}/milestones" \
 ### Phase 5: Seed Issues — Current-Sprint Deliverables (scope: `issues`)
 
 Create issues from **current-sprint open deliverables** (Phase 2), each **back-linked** and
-**idempotent** (search by a stable title before creating):
+**idempotent** (search by a stable title before creating).
+
+#### Step 1 — Create the labels first
+
+Applying a label that does not exist fails the issue creation, so **this step precedes Step 2**.
+Idempotent — each `label create` no-ops if the label is already there:
+
+```bash
+# Type labels: GitHub defaults, but absent on a fresh GitLab/Forgejo project
+gh label create "enhancement"   --color a2eeef --description "New feature or request"                 2>/dev/null || true
+gh label create "bug"           --color d73a4a --description "Something isn't working"                2>/dev/null || true
+gh label create "documentation" --color 0075ca --description "Improvements or additions to documentation" 2>/dev/null || true
+
+# Priority labels: rarely present on any forge
+gh label create "priority: high"   --color d93f0b --description "Severe impact"   2>/dev/null || true
+gh label create "priority: medium" --color e4e669 --description "Moderate impact" 2>/dev/null || true
+gh label create "priority: low"    --color c2e0c6 --description "Minor impact"    2>/dev/null || true
+```
+
+> **Colours are part of the contract, not decoration.** They match `incoming-issue`'s taxonomy
+> exactly. Because `label create` is made idempotent with `|| true`, **first writer wins** — a wrong
+> colour here would survive silently forever once this skill runs first, and the two plugins would
+> disagree with no error ever surfacing. Do not "improve" them.
+
+See the [Forge Command Reference](#forge-command-reference) for the `glab`/`tea` equivalents.
+
+#### Step 2 — Seed the issues
 
 ```bash
 # Idempotency guard
 gh issue list --search "in:title \"Wire the audit CI job\"" --state all --json number --jq '.[].number'
 
-# Create, attach to milestone, map priority/type to the incoming-issue taxonomy
+# Create, attach to milestone, apply the mapped priority/type labels (see the table below)
 gh issue create \
   --title "Wire the audit CI job" \
   --milestone "Phase 3 — v0.2.0" \
@@ -191,35 +221,45 @@ BODY
 
 **Vocabulary mapping** — do not invent new label names; these are the shared taxonomy:
 
-| Internal (plan-sprint) | Tracker |
+| Internal (sprint plan) | Tracker |
 |---|---|
-| Story Priority **High** | `priority: high` |
-| Story Priority **Medium** | `priority: medium` |
-| Story Priority **Low** | `priority: low` |
+| Story **Priority: High** | `priority: high` |
+| Story **Priority: Medium** | `priority: medium` |
+| Story **Priority: Low** | `priority: low` |
 | Roadmap **phase** | **milestone** (not a label) |
 | Deliverable kind (feature/bug/docs) | `enhancement` / `bug` / `documentation` |
 
 > Exact names matter: bare type labels, and a **space** after `priority:`. Do not add a `type:`
-> prefix or drop the space — these must match `incoming-issue`'s taxonomy exactly, so a project
-> that later adopts the maintenance plugin converges instead of ending up with two vocabularies.
-
-**Create missing labels before seeding** (idempotent — `label create` fails harmlessly if present):
-
-```bash
-# Type labels: GitHub defaults, but absent on a fresh GitLab/Forgejo project
-gh label create "enhancement"   --color a2eeef --description "New feature or request"      2>/dev/null || true
-gh label create "bug"           --color d73a4a --description "Something isn't working"     2>/dev/null || true
-gh label create "documentation" --color 0075ca --description "Documentation improvements"  2>/dev/null || true
-
-# Priority labels: rarely present on any forge
-gh label create "priority: high"   --color b60205 2>/dev/null || true
-gh label create "priority: medium" --color fbca04 2>/dev/null || true
-gh label create "priority: low"    --color 0e8a16 2>/dev/null || true
-```
-
-See the [Forge Command Reference](#forge-command-reference) for the `glab`/`tea` equivalents.
+> prefix or drop the space. These names are shared with `incoming-issue`
+> (project-maintenance-skills), so a project that later adopts the maintenance plugin converges
+> instead of ending up with two vocabularies — but nothing here *depends* on that plugin.
 
 On GitLab (`glab`) or Forgejo (`tea`), swap the `gh issue create` line for the equivalent in the [Forge Command Reference](#forge-command-reference); the back-linking, idempotency, and vocabulary mapping are identical.
+
+### Phase 5b: Mirror Roadmap Phases (only when level = `roadmap-visible`)
+
+**Skip this at the `thin` default.** Only run it when the maintainer has explicitly asked for the
+longer arc to be visible on the tracker — a team coordinating across phases, or stakeholders who
+will not read `docs/roadmap/roadmap.md`.
+
+For each **open** roadmap phase, create one tracked issue that mirrors it, attached to that phase's
+milestone from Phase 4:
+
+```bash
+gh issue create \
+  --title "Phase 3 — Knowledge-Formats Combination" \
+  --milestone "Phase 3 — v0.2.0" \
+  --label "documentation" \
+  --body "Mirror of docs/roadmap/roadmap.md → Phase 3, for tracker visibility.
+
+**The roadmap remains canonical.** This issue is a pointer, not the source of truth: do not
+maintain phase scope here. Close it when the milestone closes."
+```
+
+- **Still no retroactive re-cut**: open phases only, exactly as Phase 4.
+- These are **pointers, not a second backlog**. The moment someone edits phase scope in the issue
+  rather than the roadmap, the boundary recorded in Phase 3 has been violated — that is the failure
+  mode this level trades away, and why `thin` is the default.
 
 ### Phase 6: Reconcile & Anti-Drift
 
@@ -242,7 +282,7 @@ Phase 4/5 seeding commands change:
 | Find issue by title | `gh issue list --search "in:title \"…\"" --state all` | `glab issue list --search "…"` | `tea issues ls --state all` |
 | Create issue (+ milestone, labels) | `gh issue create --title "…" --milestone "…" --label "…"` | `glab issue create --title "…" --milestone "…" --label "…"` | `tea issues create --title "…" --milestone "…" --labels "…"` |
 | List labels | `gh label list` | `glab label list` | `tea labels ls` |
-| Create label | `gh label create "priority: high" --color b60205` | `glab label create --name "priority: high" --color "#b60205"` | `tea labels create --name "priority: high" --color b60205` |
+| Create label | `gh label create "priority: high" --color d93f0b` | `glab label create --name "priority: high" --color "#d93f0b"` | `tea labels create --name "priority: high" --color d93f0b` |
 
 - `glab`/`tea` act on the current repo, including **self-hosted instances** — authenticate once
   (`glab auth login --hostname gitlab.internal.example`, `tea login add --url https://forge.internal`)
@@ -251,8 +291,9 @@ Phase 4/5 seeding commands change:
 - `tea` has no server-side title search, so for idempotency list issues and filter by title locally;
   use the Gitea REST API via `curl` + token (`/api/v1/repos/{owner}/{repo}/…`) for anything `tea`
   doesn't expose (there is no `tea api` passthrough). Flags vary across `tea` versions — the table
-  above is verified against `tea` go-sdk v0.15.1 and `glab` 1.107.0; confirm with
-  `tea <command> --help` if yours differs.
+  above is verified against `glab` 1.107.0 and a `tea` build reporting go-sdk v0.15.1 — note that
+  `tea --version` reports an empty CLI version, so the go-sdk string is the only identifier it
+  offers; confirm with `tea <command> --help` if yours differs.
 - **Conceptual mapping** (informational — this skill seeds **milestones and issues only**, never
   iterations or epics): the roadmap→tracker analogues differ by forge:
 
@@ -275,7 +316,7 @@ Phase 4/5 seeding commands change:
 - [ ] Team-scale trigger confirmed before any forge writes (genuinely solo → stopped). Distribution profile **not** consulted — exposure does not gate work organization
 - [ ] Forge detected and the matching CLI used (`gh` / `glab` / `tea`), including self-hosted GitLab/Forgejo; only the seeding commands branch by forge, the decision logic does not
 - [ ] Required labels present — created here if missing; no dependency on another plugin having run
-- [ ] Label names match `incoming-issue`'s taxonomy exactly (bare type labels; space after `priority:`)
+- [ ] Label names **and colours** match the Vocabulary mapping and label-creation block exactly (bare type labels; space after `priority:`) — first writer wins, so a divergence here is permanent and silent
 - [ ] Only **open** phases seeded as milestones; completed phases not re-cut
 - [ ] Issues sourced from **current-sprint open deliverables**, not stale roadmap checkboxes
 - [ ] Every created issue **back-links** to its roadmap phase / ADR id / sprint doc

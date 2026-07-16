@@ -8,6 +8,34 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.25] - 2026-07-16
+
+### Fixed
+
+- `graduate-backlog` review pass (`skill-reviewer` gate). It had been rewritten and moved between
+  plugins without a fresh review; the gate found real defects:
+  - **Silent permanent label divergence**: the three `priority: *` colours did not match
+    `incoming-issue`'s taxonomy — and each collided with a *different* label in it
+    (`priority: high`→`b60205` is **`priority: critical`**; `priority: medium`→`fbca04` is
+    **`needs-info`**; `priority: low`→`0e8a16` is **`confirmed`**). Because label creation is
+    `|| true`-idempotent, **first writer wins**: graduate first and the wrong colours would survive
+    forever with no error, producing exactly the two-vocabularies outcome the skill claims to
+    prevent. Aligned to `d93f0b`/`e4e669`/`c2e0c6`, in both the Phase 5 block and the Forge Command
+    Reference, with a note that the colours are contract rather than decoration.
+  - **First run would fail**: Phase 5 created labels *after* the `gh issue create` that applies
+    them. Split into Step 1 (create labels) → Step 2 (seed issues).
+  - **Self-contradiction**: Phase 1 said "do *not* check the distribution profile" and then made
+    "the project is **Public**" an eligibility clause — re-coupling the trigger to the exact axis
+    the move was meant to sever, and making a Validation item untickable. Restated exposure-free.
+  - **`full` could not satisfy the skill's own Validation**: it ran Phases 2/4/5, omitting Phase 3
+    (the boundary ADR — the headline Output) and Phase 6 (anti-drift). Now Phases 1–6.
+  - **`roadmap-visible` was advertised but unimplemented** — selecting it silently gave `thin`
+    behaviour. Implemented as Phase 5b (mirror open phases as pointer issues), keeping the richer
+    path the thin-hybrid decision record requires.
+  - Workspace ADRs were cited by bare number, which would resolve against the *consumer's* own
+    `docs/adr/` — the sequence this skill writes into. Now cited by title.
+  - Validation no longer makes a skill from another plugin the authority for a self-contained check.
+
 ## [0.1.24] - 2026-07-16
 
 ### Fixed
