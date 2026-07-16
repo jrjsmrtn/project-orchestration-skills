@@ -1,9 +1,9 @@
 ---
 name: harden-gitlab-ci
-description: Harden GitLab CI/CD pipelines for supply-chain security — SHA-pin `include:` and CI/CD components, scope the `CI_JOB_TOKEN` allowlist, protect and mask variables, pin job image digests, and use `id_tokens`/OIDC instead of long-lived secrets. Use when adding or auditing a `.gitlab-ci.yml`, before making a GitLab project public, when a supply-chain review flags CI gaps, or when standardizing pipeline hardening across GitLab projects. GitLab-specific by design — GitHub Actions is `harden-github-actions`.
+description: Harden GitLab CI/CD pipelines for supply-chain security — SHA-pin `include:` and CI/CD components, scope the `CI_JOB_TOKEN` allowlist, protect and mask variables, pin job image digests, and use `id_tokens`/OIDC instead of long-lived secrets. Use when adding or auditing a `.gitlab-ci.yml`, before making a GitLab project public, when a supply-chain review flags CI gaps, or when standardizing pipeline hardening across GitLab projects (gitlab.com or self-hosted). GitLab-specific by design — for GitHub Actions use `harden-github-actions`; Forgejo/Gitea Actions are out of scope.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.23"
+  version: "0.1.24"
 license: MIT
 ---
 
@@ -23,21 +23,24 @@ Harden GitLab CI/CD pipelines against supply-chain attack: pin what runs, minimi
 - When auditing an existing pipeline before making a GitLab project public
 - When a supply-chain review (or the `supply-chain` skill) flags CI hardening gaps
 - When standardising pipeline hardening across GitLab projects
-- On **self-hosted GitLab** as much as gitlab.com — the controls are identical
 
 **Not for:** GitHub Actions (use `harden-github-actions`) or Forgejo/Gitea Actions. The controls do not carry over — say so rather than approximating.
 
 ## Required Inputs
 
-1. **Repository** — a GitLab project (auto-detected from git remotes; `gitlab.com` or self-hosted)
-2. **Scope** — what to run:
+1. **Repository** — a GitLab project (auto-detected from git remotes). **Self-hosted GitLab is a
+   first-class target**, not an exception: authenticate once and every control below is identical.
+2. **Project visibility** — public/internal or private. Phases 3 and 4 branch on it: public and
+   internal projects expose pipeline artifacts to unauthenticated users, and fork merge requests are
+   the main variable-exfiltration route.
+3. **Scope** — what to run:
    - `audit` — report findings against the checklist below; **no writes** (default)
    - `fix` — apply the mechanical fixes (pin includes/components/images), leave judgment calls to the maintainer
    - `full` — `audit`, then `fix` after confirmation
 
 ## The GitLab Threat Model — What Actually Differs
 
-Do **not** port `harden-github-actions`' controls one-for-one. Where the risk sits differs:
+Where the risk sits differs from GitHub Actions; the controls are not one-for-one equivalents:
 
 | Concern | GitHub Actions | GitLab CI |
 |---|---|---|
@@ -47,10 +50,11 @@ Do **not** port `harden-github-actions`' controls one-for-one. Where the risk si
 | Provenance / keyless auth | OIDC via `id-token: write` | **`id_tokens:` with an `aud` claim** |
 | Runner trust | GitHub-hosted vs self-hosted | **shared vs group/project runners**, `privileged` Docker, `shell` executor |
 
-> **A correction worth stating plainly:** GitLab *does* have a marketplace-shaped supply chain — the
-> **CI/CD Catalog** of components. It is easy to assume otherwise and skip the pinning discipline
-> entirely. GitLab's own documentation says to "Pin CI/CD components to a specific commit SHA
-> (preferred) or release version tag."
+> **GitLab has a marketplace-shaped supply chain**: the **CI/CD Catalog** of components. Assuming
+> otherwise — that only GitHub has this problem — skips the pinning discipline entirely. GitLab's
+> own docs (*CI/CD components → Best practices*) say to "Pin CI/CD components to a specific commit
+> SHA (preferred) or release version tag to ensure the integrity of the component used in a
+> pipeline."
 
 ## Workflow
 
@@ -62,13 +66,40 @@ Do **not** port `harden-github-actions`' controls one-for-one. Where the risk si
    glab auth status                      # self-hosted: glab auth login --hostname gitlab.internal.example
    ```
    If the remote is GitHub or Forgejo, **stop** and point at the right sibling skill.
-2. Locate the pipeline config — `.gitlab-ci.yml` by default; a project may relocate it
-   (Settings → CI/CD → General pipelines → CI/CD configuration file).
+2. Locate the pipeline config. `glab ci lint` **defaults to `.gitlab-ci.yml` in the current
+   directory**, but a project may relocate it (Settings → CI/CD → General pipelines → CI/CD
+   configuration file). If it is relocated, `cd` to its directory or pass its path/URL — a bare
+   lint would silently validate the wrong file, or nothing.
 3. Validate it parses before changing anything:
    ```bash
-   glab ci lint
+   glab ci lint                      # or: glab ci lint <path-or-url>
    ```
-4. Inventory the third-party surface: every `include:` and `component`, every job `image:`/`services:`.
+4. Inventory the third-party surface — run these and triage every hit (`CONFIG` = the config path):
+
+   ```bash
+   # Components/includes on a moving target: ~latest, a partial semver, or a branch
+   grep -nE '@(~latest|[0-9]+(\.[0-9]+)?$|main|master)' "$CONFIG"
+
+   # include: project blocks — then confirm each has a `ref:` pinned to a 40-char SHA.
+   # A missing ref: is a finding: it silently defaults to the target project's HEAD.
+   grep -nA3 'include:' "$CONFIG" | grep -E 'project:|ref:'
+   grep -nE '^\s*ref:\s*(?![0-9a-f]{40}\s*$)' -P "$CONFIG"   # ref: present but not a SHA
+
+   # Remote includes — no auth, no ref to pin; each one is a trust-boundary decision
+   grep -nE '^\s*-?\s*remote:' "$CONFIG"
+
+   # Images/services not pinned by digest (covers `image:` and `- name:` service entries;
+   # the negative lookahead is what keeps already-pinned `foo:1@sha256:…` from false-positiving)
+   grep -nPE '^\s*-?\s*(image|name):\s*(?!.*@sha256:)' "$CONFIG"
+
+   # Deprecated JWTs (see Phase 5) and inline secrets
+   grep -nE 'CI_JOB_JWT' "$CONFIG"
+
+   # Runner isolation escapes
+   grep -nE 'privileged:\s*true|executor:\s*shell' "$CONFIG" .gitlab-runner/*.toml 2>/dev/null
+   ```
+
+   Treat every hit as a finding to justify or fix — not as noise to skim.
 
 ### Phase 2: Pin the Third-Party Supply Chain
 
@@ -110,11 +141,30 @@ part of your trust boundary.
 
 **`include: template`** and **`include: local`** are GitLab-shipped or in-repo — no pinning needed.
 
-**Job images** — pin by digest, not tag:
+**Resolving a tag to a SHA** — for a component or template project:
+
+```bash
+# .id is the full commit SHA; :sha accepts a branch or tag name
+glab api "projects/my-org%2Fsecurity-components/repository/commits/1.0.0" --jq '.id'
+```
+
+`:fullpath` also works in place of the URL-encoded path when acting on the current project. For a
+non-GitLab-hosted template, `git ls-remote <url> refs/tags/<tag>` resolves the same thing.
+
+**Job images and services** — pin by digest, keeping the tag for readability:
 
 ```yaml
-# BAD                      # GOOD
-image: python:3.13         image: python@sha256:<digest>
+# BAD — mutable
+image: python:3.13
+services:
+  - postgres:18
+```
+
+```yaml
+# GOOD — immutable, still readable
+image: python:3.13@sha256:<digest>
+services:
+  - name: postgres:18@sha256:<digest>
 ```
 
 Resolve digests with `skopeo inspect docker://python:3.13 --format '{{.Digest}}'`. This mirrors
@@ -123,10 +173,18 @@ Resolve digests with `skopeo inspect docker://python:3.13 --format '{{.Digest}}'
 ### Phase 3: Scope the Job Token
 
 `CI_JOB_TOKEN` is minted per job, scoped to the triggering user's access level, masked in logs, and
-revoked when the job ends. **By default it reaches only its own project** — which is already the
-secure default, so the work here is *keeping* it that way.
+revoked when the job ends. **By default it reaches only its own project** — so the work here is
+mostly *keeping* it that way. But verify the default actually holds before auditing anything else:
 
-- Audit the allowlist: **Settings → CI/CD → Job token permissions → CI/CD job token allowlist**.
+- **First, confirm the allowlist is enforced at all.** Under **Settings → CI/CD → Job token
+  permissions**, the project may be set to either *"This project and any groups and projects in the
+  allowlist"* (restricted — the default) or **"All groups and projects"** (permissive). GitLab's
+  warning is unambiguous: *"If you disable the CI/CD job token allowlist, jobs from any project can
+  access your project with a job token… You should only disable this setting for testing or a
+  similar reason."* A project in the permissive mode has **no allowlist to audit** — that is the
+  worst case and the finding. Fix it before reviewing entries. (Self-managed admins can force the
+  restricted mode instance-wide via *Enable and enforce job token allowlist for all projects*.)
+- Then audit the allowlist: **Settings → CI/CD → Job token permissions → CI/CD job token allowlist**.
   Every entry is a project that may authenticate *into* this one. Justify each; remove the rest.
   (Limit: 200 entries — an allowlist near that size is a finding in itself.)
 - Adding to the allowlist **grants no new permissions** — the user must already have access. It
@@ -155,14 +213,18 @@ secure default, so the work here is *keeping* it that way.
   (with expansion enabled) use only `_ : @ - + . ~ = /` beyond alphanumerics. A secret that cannot be
   masked is a secret that will eventually appear in a log; regenerate it in a maskable format rather
   than shipping it unmasked.
-- **Masking is not a security boundary.** GitLab states plainly that it "is not a guaranteed way to
-  prevent malicious users from accessing variable values" — it defeats accidental logging, not an
-  attacker running code in the job.
+- **Masking is not a security boundary.** GitLab's own docs (*CI/CD variables → Mask a CI/CD
+  variable*) state it "is not a guaranteed way to prevent malicious users from accessing variable
+  values" — it defeats accidental logging, not an attacker running code in the job.
 - **The fork/MR path is the real exposure.** A merge request that edits `.gitlab-ci.yml` can
   exfiltrate both masked and protected variables — GitLab's guidance is to review every
   `.gitlab-ci.yml` change before merging. For public projects, require approval before running
   pipelines on fork MRs.
-- Use `--hidden` for variables that should not be readable back in the UI after creation.
+- Use `--hidden` for variables that should not be readable back in the UI. **Set it at creation —
+  it cannot be added later**: "Hiding a variable is only possible when creating a new variable, you
+  cannot update an existing variable to be hidden." Hidden values must also satisfy the masking
+  requirements above. Making an existing variable hidden means deleting and recreating it, which in
+  practice means rotating the secret — plan for that rather than discovering it mid-audit.
 
 ### Phase 5: Replace Long-Lived Secrets with OIDC (`id_tokens`)
 
@@ -206,11 +268,17 @@ Re-run the Phase 2 inventory and confirm nothing resolves to a moving target.
 
 ## Outputs
 
-- An audit report: unpinned includes/components/images, allowlist entries, unmasked/unprotected
-  variables, deprecated `CI_JOB_JWT*` use, `privileged`/`shell` runners.
-- (`fix` scope) Pinned `include:`/`component`/`image:` references, with the resolved SHAs recorded.
-- A list of **judgment calls left to the maintainer** — allowlist trimming, runner choice, and
-  fork-MR policy are decisions, not mechanical fixes.
+- [ ] An **audit report**: job-token enforcement mode, unpinned includes/components/images/services,
+      allowlist entries, unmasked/unprotected variables, deprecated `CI_JOB_JWT*` use,
+      `privileged`/`shell` runners — each with a file:line or settings path.
+- [ ] (`fix` scope) Pinned `include:` / `component` / `image:` / `services:` references, with the
+      resolved SHAs and digests recorded.
+- [ ] (`fix` scope) `glab ci lint` re-run and passing after the changes.
+- [ ] A list of **judgment calls left to the maintainer** — job-token mode, allowlist trimming,
+      accepted `include: remote` hosts, runner choice, and fork-MR policy are decisions, not
+      mechanical fixes.
+- [ ] Any decision worth keeping (an accepted `remote` include, a retained `privileged` runner)
+      recorded as an ADR via `setup-adrs`.
 
 ## Validation
 
@@ -218,7 +286,8 @@ Re-run the Phase 2 inventory and confirm nothing resolves to a moving target.
 - [ ] Every `include: component` pinned to a commit SHA (or a release tag on a tag-protected project) — no `~latest`
 - [ ] Every `include: project` has an explicit `ref:` pinned to a SHA — no implicit HEAD
 - [ ] Every `include: remote` justified, and its host treated as part of the trust boundary
-- [ ] Job `image:`/`services:` pinned by digest
+- [ ] Job `image:` and `services:` pinned by digest
+- [ ] **Job-token access mode confirmed restricted** (not "All groups and projects") *before* allowlist entries were reviewed — a permissive project has no allowlist to audit
 - [ ] `CI_JOB_TOKEN` allowlist reviewed entry-by-entry; fine-grained permissions preferred
 - [ ] No secrets in `.gitlab-ci.yml`; every secret variable both masked **and** protected
 - [ ] Any secret that cannot satisfy the masking constraints regenerated, not shipped unmasked
@@ -229,6 +298,7 @@ Re-run the Phase 2 inventory and confirm nothing resolves to a moving target.
 ## Related Skills
 
 - `harden-github-actions` — the sibling for GitHub Actions. Same intent, different execution model; neither is a translation of the other
+- `setup-adrs` — record the decisions this surfaces: an accepted `include: remote` host, retained allowlist entries, a justified `privileged` runner
 - `setup-container-security` — base-image digest pinning and the skopeo bump procedure this reuses for job images
 - `setup-pre-commit` — local quality gates; this skill hardens the CI that enforces them
 - `validate-quality-config` — *reads* CI to confirm parity with local hooks; it does not check pinning, permissions, or provenance. Complementary

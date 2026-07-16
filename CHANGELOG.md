@@ -8,6 +8,33 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.24] - 2026-07-16
+
+### Fixed
+
+- `harden-gitlab-ci` review pass (`skill-reviewer` gate). Substantive fixes:
+  - **Security gap**: Phase 3 asserted that `CI_JOB_TOKEN` "reaches only its own project" by default
+    and never checked whether that default still holds. A project can be set to **"All groups and
+    projects"**, where — in GitLab's words — "jobs from any project can access your project with a
+    job token". That is the worst case *and* the one with no allowlist to audit. Confirming the
+    access mode is now the first step of the phase, before any entry review.
+  - **`audit` was advisory, not actionable**: the default scope had no executable detection. Added
+    tested `grep` patterns for moving-target components, `include: project` without a pinned `ref:`,
+    remote includes, undigested images/services, deprecated `CI_JOB_JWT*`, and `privileged`/`shell`
+    runners.
+  - **`fix` couldn't do what it promised**: no way to resolve a component/template tag → SHA. Added
+    `glab api ".../repository/commits/<tag>" --jq '.id'` (the API's `:sha` accepts a branch or tag
+    name), plus a `git ls-remote` fallback.
+  - `--hidden` variables: documented the create-only constraint ("you cannot update an existing
+    variable to be hidden") — making one hidden means recreating it, i.e. rotating the secret.
+  - `glab ci lint` defaults to `.gitlab-ci.yml` in the *current directory*, which contradicted the
+    skill's own note that the config may be relocated; now says to `cd` or pass the path.
+  - Split the malformed BAD/GOOD image block (it was one line, so copy-paste produced invalid YAML);
+    kept the tag alongside the digest; extended pinning to `services:`.
+  - Added the missing **project visibility** input (Phases 3 and 4 branch on it), a `setup-adrs`
+    pointer for the decisions this surfaces, an Outputs checklist per house convention, and doc-page
+    citations for the two quoted GitLab passages.
+
 ## [0.1.23] - 2026-07-16
 
 ### Added
