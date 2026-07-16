@@ -1,6 +1,6 @@
 # AI-Assisted Project Orchestration Skills
 
-Claude Code plugin providing 11 skills for AI-assisted project orchestration.
+Claude Code plugin providing 12 skills for AI-assisted project orchestration.
 
 ## Project Structure
 
@@ -43,7 +43,8 @@ metadata:
 | setup-architecture-as-code | Architecture (C4/Structurizr) |
 | setup-pre-commit | Quality (two-stage hooks) |
 | validate-quality-config | Quality (config consistency) |
-| harden-github-actions | Quality (GitHub Actions supply-chain hardening — the one deliberately forge-bound skill) |
+| harden-github-actions | Quality (GitHub Actions supply-chain hardening — deliberately forge-bound) |
+| harden-gitlab-ci | Quality (GitLab CI supply-chain hardening — deliberately forge-bound; sibling of the above) |
 | setup-container-security | Quality (container image hardening) |
 | plan-sprint | Sprint workflow (planning, minimal or structured) |
 | wrapup-sprint | Sprint workflow (retrospective, minimal or expanded) |
@@ -56,7 +57,9 @@ metadata:
 - Skill names are kebab-case
 - Skills reference each other via `Related Skills` sections
 - Skills are designed to run in the target project's working directory, not in this plugin repo
-- **Forge-agnostic by default** — a skill that touches a forge abstracts over `gh` / `glab` / `tea`, including self-hosted GitLab/Forgejo, and verifies command syntax against the installed CLI rather than asserting it (`graduate-backlog` is the reference implementation). **One sanctioned exception:** `harden-github-actions`, whose controls are properties of the GitHub Actions execution model rather than portable concepts in GitHub syntax — it is named for its coupling instead of hiding it. Adding a second exception should be an ADR, not a habit.
+- **Forge-agnostic by default** — a skill that touches a forge abstracts over `gh` / `glab` / `tea`, including self-hosted GitLab/Forgejo, and verifies command syntax against the installed CLI rather than asserting it (`graduate-backlog` is the reference implementation).
+- **Sanctioned exception — the `harden-*` family** (`harden-github-actions`, `harden-gitlab-ci`): CI hardening controls are properties of a specific CI *execution model*, not portable concepts wearing one forge's syntax, so each forge gets a **sibling skill named for its coupling** rather than a branch inside a shared skill. Siblings also keep each `description` a clean activation trigger. This is a closed family — one skill per forge, currently 2 of 3 (Forgejo Actions is roadmap H9). A *non*-`harden-*` exception should require an ADR.
+  - When writing a sibling, build that forge's **equivalent** controls; do not transliterate another forge's. The risks differ in kind (e.g. GitLab's `CI_JOB_TOKEN` defaults to own-project-only, so the work is *keeping* it scoped — the opposite posture from GitHub's repo-wide-by-default `GITHUB_TOKEN`).
 - Lesser forge coupling that is *not* sanctioned, and should be fixed if touched: `bootstrap-project` writes `.github/dependabot.yml`; `wrapup-sprint` calls `gh api repos`
 - The plugin is extracted from the [AI-Assisted Project Orchestration](https://github.com/jrjsmrtn/ai-assisted-project-orchestration) pattern language project
 

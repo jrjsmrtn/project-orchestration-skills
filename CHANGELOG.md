@@ -8,6 +8,29 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.23] - 2026-07-16
+
+### Added
+
+- New skill **`harden-gitlab-ci`** (workspace roadmap H8) — GitLab CI/CD supply-chain hardening:
+  SHA-pinned `include:`/CI-Catalog components, `CI_JOB_TOKEN` allowlist scoping, masked **and**
+  protected variables, digest-pinned job images, `id_tokens`/OIDC in place of long-lived secrets,
+  and runner-trust checks (`privileged`, `shell` executor). Works on gitlab.com and self-hosted
+  alike. Plugin roster 11 → 12 skills.
+- `harden-gitlab-ci` is a **sibling** of `harden-github-actions`, not a translation: it builds
+  GitLab's *equivalent* controls rather than transliterating GitHub's, because the risks differ in
+  kind. Notably GitLab's `CI_JOB_TOKEN` defaults to own-project-only, so the work is *keeping* it
+  scoped — the opposite posture from GitHub's repo-wide-by-default `GITHUB_TOKEN`.
+- po's `CLAUDE.md` now records the `harden-*` family as the sanctioned exception to
+  forge-agnosticism: one skill per forge, named for its coupling, closed at 3 (Forgejo is H9).
+
+### Fixed
+
+- `harden-github-actions` claimed GitLab has "no marketplace-action supply chain". **That is false**
+  — GitLab has a **CI/CD Catalog** of components, whose own docs say to "Pin CI/CD components to a
+  specific commit SHA (preferred)". The claim was a plausible assumption written without checking;
+  it is corrected, and the same-class risk is now handled in `harden-gitlab-ci` Phase 2.
+
 ## [0.1.22] - 2026-07-16
 
 ### Changed

@@ -3,7 +3,7 @@ name: harden-github-actions
 description: Harden GitHub Actions CI/CD workflows for supply-chain security — SHA-pin actions, least-privilege token permissions, verified toolchain installs, OpenSSF Scorecard, and SLSA provenance. Use when adding or auditing GitHub Actions workflows, before making a repository public, when a supply-chain review flags CI gaps, or when standardizing CI hardening across GitHub projects. GitHub-specific by design — GitLab CI and Forgejo Actions are out of scope.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.22"
+  version: "0.1.23"
 license: MIT
 ---
 
@@ -11,15 +11,15 @@ license: MIT
 
 Harden GitHub Actions CI/CD workflows against supply-chain attack: pin what runs, minimise what it can do, and verify what it fetches.
 
-> **GitHub-specific by design.** Unlike the other orchestration skills, this one is deliberately
-> bound to one forge. The hardening controls below are not portable concepts wearing GitHub syntax —
-> they are properties of the GitHub Actions execution model itself: third-party actions resolved by
-> mutable git ref, an ambient `GITHUB_TOKEN` with repository-wide default scopes, and OIDC-backed
-> SLSA provenance. GitLab CI (no marketplace-action supply chain; job tokens scoped differently) and
-> Forgejo Actions (Actions-compatible in shape, but a different action registry and trust model)
-> need genuinely different controls, not a translation. A forge-neutral version of this skill would
-> be three unrelated skills sharing a name. The skill is named for what it does; if you need GitLab
-> CI hardening, that is separate work.
+> **GitHub-specific by design.** Unlike most orchestration skills, this one is deliberately bound to
+> one forge. The hardening controls below are not portable concepts wearing GitHub syntax — they are
+> properties of the GitHub Actions execution model itself: third-party actions resolved by mutable
+> git ref, an ambient `GITHUB_TOKEN` with **repository-wide default scopes**, and OIDC-backed SLSA
+> provenance. It has a **sibling**, `harden-gitlab-ci`, which is not a translation of this skill:
+> GitLab's risks sit in different places (`include:`/CI-Catalog components, and a `CI_JOB_TOKEN` that
+> defaults to *own-project-only* — so there the work is keeping it scoped, the opposite posture from
+> here). Forgejo Actions is Actions-compatible in shape but resolves actions against its instance's
+> configured registry, so pinning guidance does not transfer unchanged (roadmap H9).
 
 ## When to Use
 
@@ -28,7 +28,7 @@ Harden GitHub Actions CI/CD workflows against supply-chain attack: pin what runs
 - When a supply-chain review (or the `supply-chain` skill) flags CI hardening gaps
 - When standardising CI hardening across GitHub projects
 
-**Not for:** GitLab CI or Forgejo/Gitea Actions — the controls do not carry over. Say so rather than approximating.
+**Not for:** GitLab CI — use `harden-gitlab-ci`. Not for Forgejo/Gitea Actions — the controls do not carry over unchanged. Say so rather than approximating.
 
 This skill *hardens* CI workflows. `validate-quality-config` only *reads* CI to confirm parity with local hooks — it does not check pinning, permissions, or provenance. The two are complementary.
 
@@ -261,6 +261,7 @@ Optionally run `actionlint` for workflow-syntax validation, and check the repo's
 
 ## Related Skills
 
+- `harden-gitlab-ci` — the sibling for GitLab CI. Same intent, different execution model; neither is a translation of the other (GitLab's risks sit in `include:`/CI-Catalog components and the `CI_JOB_TOKEN` allowlist)
 - `setup-pre-commit` — local quality gates that CI mirrors
 - `validate-quality-config` — verifies CI/local parity (reads CI; does not harden it)
 - `wrapup-sprint` — release-time SBOM, SLSA provenance, and signing
