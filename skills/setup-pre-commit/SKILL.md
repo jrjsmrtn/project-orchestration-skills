@@ -3,7 +3,7 @@ name: setup-pre-commit
 description: Configure two-stage pre-commit hooks for quality automation. Use after bootstrap-project and setup-adrs, when adding quality gates to an existing project, or when standardizing quality automation.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.21"
+  version: "0.1.22"
 license: MIT
 ---
 
@@ -273,7 +273,7 @@ reuse:
 ```
 
 ```yaml
-# .github/workflows/ci.yml — SHA-pin per harden-ci-workflows
+# .github/workflows/ci.yml — SHA-pin per harden-github-actions
 - uses: fsfe/reuse-action@<sha>   # v5
 ```
 
@@ -590,7 +590,7 @@ on:
     - cron: "0 6 * * 1"   # weekly
 ```
 
-Harden this job (SHA-pin the actions, `permissions: contents: read`) with `harden-ci-workflows`.
+Harden this job (SHA-pin the actions, `permissions: contents: read`) with `harden-github-actions`.
 
 ## Outputs
 
@@ -656,4 +656,4 @@ git commit -m "chore: update pre-commit hook versions"
 
 - `setup-adrs` - establishes the development-practices ADR that documents these quality gates
 - `validate-quality-config` - Validate configuration consistency
-- `harden-ci-workflows` - harden the CI audit job (SHA-pin actions, least-privilege permissions)
+- `harden-github-actions` - harden the CI audit job (SHA-pin actions, least-privilege permissions)

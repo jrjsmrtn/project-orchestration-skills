@@ -8,6 +8,30 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.22] - 2026-07-16
+
+### Changed
+
+- **Renamed `harden-ci-workflows` → `harden-github-actions`** (workspace roadmap H7). The skill was
+  GitHub-Actions-specific by definition while living in a plugin that the workspace decision record
+  "Plugin Taxonomy by Lifecycle, Not Exposure" affirms is forge-agnostic — the last known violation
+  of that invariant. Renaming owns the coupling
+  rather than hiding it: its controls are properties of the GitHub Actions execution model (actions
+  resolved by mutable git ref, an ambient repo-scoped `GITHUB_TOKEN`, OIDC-backed SLSA provenance),
+  not portable concepts wearing GitHub syntax. GitLab CI and Forgejo Actions need different
+  controls, not a translation, and are declared explicitly out of scope.
+- `harden-github-actions` is now the **one sanctioned forge-bound exception** in this plugin,
+  recorded in `CLAUDE.md`; a second exception should require an ADR. The remaining lesser coupling
+  (`bootstrap-project` writing `.github/dependabot.yml`, `wrapup-sprint` calling `gh api repos`) is
+  noted as unsanctioned and to be fixed when touched.
+- Cross-references updated in `bootstrap-project`, `setup-pre-commit`, `setup-container-security`,
+  `wrapup-sprint`, README, and CLAUDE.md.
+
+### Breaking
+
+- The skill's invocation name changes: `/harden-ci-workflows` → `/harden-github-actions`. Update any
+  scripts, docs, or muscle memory that reference the old name. The old name is not aliased.
+
 ## [0.1.21] - 2026-07-16
 
 ### Added

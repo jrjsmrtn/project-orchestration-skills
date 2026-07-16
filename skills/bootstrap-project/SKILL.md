@@ -3,7 +3,7 @@ name: bootstrap-project
 description: Bootstrap a new project at a chosen graduation tier (t0 minimum, t1 decision-tracked, t2 full pattern language) following AI-Assisted Project Orchestration best practices. Use when starting a new software project, promoting an existing project to a higher tier, or converting an existing project for AI-assisted development.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.21"
+  version: "0.1.22"
 license: MIT
 ---
 
@@ -70,7 +70,7 @@ This skill implements the **Tiered Bootstrap** pattern. Each tier is a strict su
 |---|---|---|
 | **Private** (default) | internal / homelab / WIP | baseline hygiene (secret scanning — already universal) |
 | **Public** | open-sourced on a public forge **and** licensed | LICENSE/REUSE, `SECURITY.md` + coordinated disclosure (Phase 9), OpenSSF Scorecard aspirational |
-| **`ships-artifacts`** (marker) | publishes built packages/images to a registry, or signed release binaries | + SLSA provenance, SBOM, signing, trusted publishing (via `harden-ci-workflows`, `wrapup-sprint`) |
+| **`ships-artifacts`** (marker) | publishes built packages/images to a registry, or signed release binaries | + SLSA provenance, SBOM, signing, trusted publishing (via `harden-github-actions`, `wrapup-sprint`) |
 
 Going Public *is* making the source redistributable (licensing is part of the gate), so there is no separate "distributed" level. **`ships-artifacts` is a boolean, not a rung** — set it when going public, later, or never. Controls attach to the profile, not the tier, so a project pays only for its actual exposure. Record the profile in CLAUDE.md `## Project Context`; promotion to Public is the `public-release` graduation gate (`project-maintenance-skills`).
 
@@ -433,7 +433,7 @@ The fuller go-public checklist (CONTRIBUTING, CODE_OF_CONDUCT, LICENSE verificat
 
 ### Phase 10: Dependency Update Automation (Dependabot)
 
-For any project with a GitHub remote, generate `.github/dependabot.yml` so dependencies, GitHub Actions, and base images get automatic update PRs. This is the OpenSSF Scorecard `Dependency-Update-Tool` control, and it keeps SHA-pinned actions (`harden-ci-workflows`) and digest-pinned images (`setup-container-security`) current. Cover every ecosystem the project uses — the package manager, **`github-actions`** (if there is CI), and **`docker`** (if there is a Containerfile):
+For any project with a GitHub remote, generate `.github/dependabot.yml` so dependencies, GitHub Actions, and base images get automatic update PRs. This is the OpenSSF Scorecard `Dependency-Update-Tool` control, and it keeps SHA-pinned actions (`harden-github-actions`) and digest-pinned images (`setup-container-security`) current. Cover every ecosystem the project uses — the package manager, **`github-actions`** (if there is CI), and **`docker`** (if there is a Containerfile):
 
 ```yaml
 # .github/dependabot.yml
@@ -546,5 +546,5 @@ Verify successful bootstrap based on tier:
 - `setup-architecture-as-code` - Create architecture model
 - `plan-sprint` - Create initial sprint plan
 - `public-release` (project-maintenance-skills) - Private→Public graduation gate (full go-public checklist)
-- `harden-ci-workflows` - CI hardening for Public + `ships-artifacts` projects
+- `harden-github-actions` - CI hardening for Public + `ships-artifacts` projects
 - `setup-container-security` - container image hardening (digest pins, non-root, grype/SBOM)

@@ -1,22 +1,34 @@
 ---
-name: harden-ci-workflows
-description: Harden GitHub Actions CI/CD workflows for supply-chain security — SHA-pin actions, least-privilege token permissions, verified toolchain installs, OpenSSF Scorecard, and SLSA provenance. Use when adding or auditing CI workflows, before making a repository public, when a supply-chain review flags CI gaps, or when standardizing CI hardening across projects.
+name: harden-github-actions
+description: Harden GitHub Actions CI/CD workflows for supply-chain security — SHA-pin actions, least-privilege token permissions, verified toolchain installs, OpenSSF Scorecard, and SLSA provenance. Use when adding or auditing GitHub Actions workflows, before making a repository public, when a supply-chain review flags CI gaps, or when standardizing CI hardening across GitHub projects. GitHub-specific by design — GitLab CI and Forgejo Actions are out of scope.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.21"
+  version: "0.1.22"
 license: MIT
 ---
 
-# Harden CI Workflows
+# Harden GitHub Actions
 
 Harden GitHub Actions CI/CD workflows against supply-chain attack: pin what runs, minimise what it can do, and verify what it fetches.
 
+> **GitHub-specific by design.** Unlike the other orchestration skills, this one is deliberately
+> bound to one forge. The hardening controls below are not portable concepts wearing GitHub syntax —
+> they are properties of the GitHub Actions execution model itself: third-party actions resolved by
+> mutable git ref, an ambient `GITHUB_TOKEN` with repository-wide default scopes, and OIDC-backed
+> SLSA provenance. GitLab CI (no marketplace-action supply chain; job tokens scoped differently) and
+> Forgejo Actions (Actions-compatible in shape, but a different action registry and trust model)
+> need genuinely different controls, not a translation. A forge-neutral version of this skill would
+> be three unrelated skills sharing a name. The skill is named for what it does; if you need GitLab
+> CI hardening, that is separate work.
+
 ## When to Use
 
-- When adding CI workflows to a project (after `setup-pre-commit`)
+- When adding GitHub Actions workflows to a project (after `setup-pre-commit`)
 - When auditing existing `.github/workflows/` before making a repository public
 - When a supply-chain review (or the `supply-chain` skill) flags CI hardening gaps
-- When standardising CI hardening across projects
+- When standardising CI hardening across GitHub projects
+
+**Not for:** GitLab CI or Forgejo/Gitea Actions — the controls do not carry over. Say so rather than approximating.
 
 This skill *hardens* CI workflows. `validate-quality-config` only *reads* CI to confirm parity with local hooks — it does not check pinning, permissions, or provenance. The two are complementary.
 

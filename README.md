@@ -53,7 +53,7 @@ gh skill install jrjsmrtn/project-orchestration-skills --dir ~/.vibe/skills
 |-------|-------------|
 | **setup-pre-commit** | Configure two-stage pre-commit hooks |
 | **validate-quality-config** | Validate consistency across quality configs |
-| **harden-ci-workflows** | Harden CI/CD workflows against supply-chain risk (SHA-pinned actions, least-privilege tokens, verified toolchains) |
+| **harden-github-actions** | Harden GitHub Actions workflows against supply-chain risk (SHA-pinned actions, least-privilege tokens, verified toolchains). GitHub-specific by design. |
 | **setup-container-security** | Harden container images (digest-pinned bases, verified fetches, non-root runtime, grype/SBOM) |
 
 ### Sprint Workflow
@@ -75,7 +75,7 @@ After installation, invoke skills using slash commands:
 /setup-architecture-as-code
 /setup-pre-commit
 /validate-quality-config
-/harden-ci-workflows
+/harden-github-actions
 /setup-container-security
 /plan-sprint
 /wrapup-sprint

@@ -3,7 +3,7 @@ name: setup-container-security
 description: Harden container images (Containerfile/Dockerfile) for supply-chain security — digest-pinned bases, non-root runtime, verified artifact fetches, hadolint/shellcheck linting, and grype + syft SBOM scanning. Use when a project builds a container image, before publishing an image to a registry, or when auditing container security.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.21"
+  version: "0.1.22"
 license: MIT
 ---
 
@@ -222,7 +222,7 @@ test -s sbom.spdx.json && test -s sbom.cdx.json && echo "SBOM ok"
 
 ## Related Skills
 
-- `harden-ci-workflows` - harden the image build/publish workflow (SHA-pin actions, least-privilege, cosign-installer)
+- `harden-github-actions` - harden the image build/publish workflow (SHA-pin actions, least-privilege, cosign-installer)
 - `wrapup-sprint` - release-time SBOM + cosign signing for published images
 - `setup-pre-commit` - lockfile enforcement and the hadolint/shellcheck hooks
 - `bootstrap-project` - the distribution profile (whether the project publishes artifacts); Dependabot config

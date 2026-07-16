@@ -3,7 +3,7 @@ name: wrapup-sprint
 description: Complete a sprint with retrospective, changelog update, release tagging, and (for `ships-artifacts` projects) release provenance — SBOM, SLSA, and signing. Use when sprint work is done, at the end of a sprint cycle, or before starting a new sprint.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.21"
+  version: "0.1.22"
 license: MIT
 ---
 
@@ -295,7 +295,7 @@ cosign verify {registry}/{owner}/{repo}:<tag> \
   --certificate-identity-regexp '^https://github.com/{owner}/{repo}/\.github/workflows/<wf>\.yml@refs/tags/v'
 ```
 
-The release **workflow** itself (job permissions, the SLSA-generator tag-pin exception, SHA-pinned `cosign-installer`) is hardened by `harden-ci-workflows`. This step's job at wrap-up is to confirm the release carries an SBOM + provenance/signing appropriate to its artifact type, and that a verification guide exists.
+The release **workflow** itself (job permissions, the SLSA-generator tag-pin exception, SHA-pinned `cosign-installer`) is hardened by `harden-github-actions`. This step's job at wrap-up is to confirm the release carries an SBOM + provenance/signing appropriate to its artifact type, and that a verification guide exists.
 
 > **Grounding**: SLSA + EU CRA (build integrity, SBOM) and EEF Ægis trusted publishing (Hex/BEAM). These are the `ships-artifacts` controls from the distribution-profile axis (see `bootstrap-project`). Note: signing and SLSA provenance are per-artifact-type — cosign for images, slsa-verifier for tarballs/binaries; don't conflate them.
 
@@ -342,6 +342,6 @@ ls docs/sprints/sprint-NNNN-retrospective.*
 
 - `plan-sprint` - Create next sprint plan
 - `bootstrap-project` - Initial project setup; declares the distribution profile / `ships-artifacts` marker
-- `harden-ci-workflows` - Harden the release workflow that produces provenance (permissions, SLSA-generator tag exception, SHA-pinned cosign-installer)
+- `harden-github-actions` - Harden the release workflow that produces provenance (permissions, SLSA-generator tag exception, SHA-pinned cosign-installer)
 - `setup-adrs` - ADR-0002 documents sprint practices
 - `graduate-backlog` - once a project's backlog graduates to a forge tracker, defines the tracker boundary and single source of truth that Step 7 honours

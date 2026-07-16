@@ -43,7 +43,7 @@ metadata:
 | setup-architecture-as-code | Architecture (C4/Structurizr) |
 | setup-pre-commit | Quality (two-stage hooks) |
 | validate-quality-config | Quality (config consistency) |
-| harden-ci-workflows | Quality (CI/CD supply-chain hardening) |
+| harden-github-actions | Quality (GitHub Actions supply-chain hardening — the one deliberately forge-bound skill) |
 | setup-container-security | Quality (container image hardening) |
 | plan-sprint | Sprint workflow (planning, minimal or structured) |
 | wrapup-sprint | Sprint workflow (retrospective, minimal or expanded) |
@@ -56,6 +56,8 @@ metadata:
 - Skill names are kebab-case
 - Skills reference each other via `Related Skills` sections
 - Skills are designed to run in the target project's working directory, not in this plugin repo
+- **Forge-agnostic by default** — a skill that touches a forge abstracts over `gh` / `glab` / `tea`, including self-hosted GitLab/Forgejo, and verifies command syntax against the installed CLI rather than asserting it (`graduate-backlog` is the reference implementation). **One sanctioned exception:** `harden-github-actions`, whose controls are properties of the GitHub Actions execution model rather than portable concepts in GitHub syntax — it is named for its coupling instead of hiding it. Adding a second exception should be an ADR, not a habit.
+- Lesser forge coupling that is *not* sanctioned, and should be fixed if touched: `bootstrap-project` writes `.github/dependabot.yml`; `wrapup-sprint` calls `gh api repos`
 - The plugin is extracted from the [AI-Assisted Project Orchestration](https://github.com/jrjsmrtn/ai-assisted-project-orchestration) pattern language project
 
 ## Installation
