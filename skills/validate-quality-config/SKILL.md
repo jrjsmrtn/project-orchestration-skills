@@ -3,7 +3,7 @@ name: validate-quality-config
 description: Validate consistency across quality configuration files. Use after setup-pre-commit, when debugging "works locally, fails in CI" issues, before major releases, or when onboarding.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.25"
+  version: "0.1.26"
 license: MIT
 ---
 
@@ -35,6 +35,18 @@ Linter configs                           ← Code analysis
 .github/workflows/*.yml                  ← CI pipeline
 .gitlab-ci.yml
 ```
+
+Plus one axis that is *not* a match but a required **difference**:
+
+```
+Language manifest  →  toolchain FLOOR   (go.mod, Cargo.toml, pyproject.toml, package.json, mix.exs)
+CI config          →  toolchain BUILD   (go-version:, python-version:, node-version:, matrix)
+                      these must NOT be the same value
+```
+
+**Also validated**: that the toolchain **floor** (language manifest) and **build version** (CI)
+are deliberately *different*, and that only the floor-compatibility job reads the manifest. This is
+the one assertion in this skill that checks a difference rather than a match.
 
 ## Required Inputs
 
@@ -151,7 +163,61 @@ if [ -f .gitlab-ci.yml ]; then
 fi
 ```
 
-### Step 6: Validate Version Consistency
+### Step 6: Validate Toolchain Floor vs Build Version
+
+Most of this skill checks that values **agree**. This one checks that two values **differ**, which
+is why it is easy to omit and why omitting it is expensive.
+
+The language manifest declares the **floor** — the oldest runtime a consumer needs. CI selects the
+**build version** — what artifacts are actually produced with. If CI reads the floor from the
+manifest, every build runs on the least-patched runtime the project claims to support. Released
+artifacts embed that runtime, and if the project publishes an SBOM they *record* it, so the
+vulnerable version is both shipped and documented.
+
+```bash
+echo "Checking toolchain floor vs build version..."
+
+# The floor, from whichever manifest the stack uses:
+floor=$(grep -m1 -oE '^go[[:space:]]+[0-9.]+' go.mod 2>/dev/null | grep -oE '[0-9.]+')
+floor=${floor:-$(grep -m1 -oE 'rust-version[[:space:]]*=[[:space:]]*"[0-9.]+"' Cargo.toml 2>/dev/null | grep -oE '[0-9.]+')}
+floor=${floor:-$(grep -m1 -oE 'requires-python[[:space:]]*=[[:space:]]*"[^"]+"' pyproject.toml 2>/dev/null | grep -oE '[0-9.]+')}
+echo "declared floor: ${floor:-UNKNOWN}"
+
+# Every place CI selects a version, and every place it reads the manifest instead:
+echo "-- build versions selected in CI --"
+grep -rhoE '(go|python|node|otp|elixir)-version:[[:space:]]*"?[^"[:space:]]+' .github/workflows/ 2>/dev/null \
+  | tr -d '"' | sort | uniq -c
+
+echo "-- call sites reading the floor from the manifest --"
+grep -rn 'version-file' .github/workflows/ 2>/dev/null
+
+# A build version equal to the floor is the defect this step exists to catch:
+# The trailing boundary matters: without it a floor of "1.2" matches a build of "1.26".
+# Do NOT anchor to end-of-line — inline YAML (`with: { go-version: "1.26" }`) has a trailing `}`.
+grep -rqE "version:[[:space:]]*\"?${floor}([^0-9.]|$)" .github/workflows/ 2>/dev/null \
+  && echo "✗ CI builds at the declared floor (${floor}) — least-patched runtime" \
+  || echo "✓ build version differs from the floor"
+```
+
+Report as findings:
+
+- **Error** — CI builds at the declared floor, or no floor is declared at all.
+- **Error** — more than one distinct build version across CI, unless a test matrix is intended.
+- **Warning** — a `*-version-file` call site outside the floor-compatibility job. Reading the
+  manifest is correct *only* there; everywhere else it silently pins the build to the floor.
+- **Warning** — no job builds at the floor. The compatibility claim is then unverified, and a
+  floor nothing tests is a guess.
+- **Warning** — the build version tracks a moving alias (`stable`, `latest`, `*`). A new major
+  release then changes what ships with no commit; pin the line instead, which still takes patch
+  releases and so still carries runtime security fixes.
+- **Note** — a sub-module with a *higher* floor forced by a dependency is inherited, not chosen.
+  Its CI job must read *its* manifest, not the root one.
+
+The reference document should record all of this per call site. If it does not, the drift has
+nowhere to be noticed: a partial fix that updates the obvious workflows and misses a scheduled
+scan looks identical to a complete one.
+
+### Step 7: Validate Version Consistency
 
 The declared version must agree across every file that states it. Drift here is a real, common defect (e.g. a README badge or `SECURITY.md` left behind while the manifest moved on).
 
@@ -174,7 +240,7 @@ done
 
 Confirm the declared version agrees across the package manifest (`mix.exs` `@version`, `pyproject.toml` `version`, `package.json` `version`, `Cargo.toml`, `build.gradle.kts`), the `README.md` status line/badge, the latest released `CHANGELOG.md` section, and the `SECURITY.md` supported-versions table. Report any divergence as an error. If the project follows a during-development versioning rule (for example, staying on patch-level `0.1.x` releases until the first stable minor), honour it.
 
-### Step 7: Generate Validation Report
+### Step 8: Generate Validation Report
 
 ```bash
 echo ""
@@ -242,6 +308,22 @@ check "[ -f .pre-commit-config.yaml ]" ".pre-commit-config.yaml exists"
 
 echo ""
 echo "Checking value consistency..."
+
+# Toolchain floor vs build version — the one check that asserts a DIFFERENCE.
+# See Step 6; this is the highest-value single check in the script, because getting it
+# wrong ships artifacts built on the least-patched runtime the project supports.
+floor=$(grep -m1 -oE '^go[[:space:]]+[0-9.]+' go.mod 2>/dev/null | grep -oE '[0-9.]+')
+if [ -n "$floor" ]; then
+  if grep -rqE "version:[[:space:]]*\"?${floor}([^0-9.]|$)" .github/workflows/ 2>/dev/null; then
+    echo "✗ CI builds at the declared floor ($floor)"
+    errors=$((errors + 1))
+  fi
+  n_manifest=$(grep -rc 'version-file' .github/workflows/ 2>/dev/null | awk -F: '{s+=$2} END {print s+0}')
+  if [ "$n_manifest" -gt 1 ]; then
+    echo "⚠ $n_manifest call sites read the toolchain from a manifest; only the floor job should"
+    warnings=$((warnings + 1))
+  fi
+fi
 
 # Add technology-specific checks here based on project type
 

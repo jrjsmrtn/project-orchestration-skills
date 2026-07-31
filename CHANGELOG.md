@@ -8,6 +8,32 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.26] - 2026-07-31
+
+### Added
+
+- **Toolchain versions are now a first-class quality-configuration concern** (roadmap H12), split
+  across the two skills that own the two halves of it:
+  - `setup-pre-commit` — the Step 0 `quality-configuration.md` template gains a **Toolchain
+    Versions** section: a three-role table (**Floor** = oldest runtime a consumer needs, from the
+    language manifest; **Build** = what CI actually builds with; **Inherited** = a floor a
+    dependency forces on you, not a choice), a per-ecosystem floor-vs-build table (Go, Rust,
+    Python, Node, Elixir), and four rules — build with the current version and never the floor,
+    prove the floor in a separate job, record the intent **per call site**, and record the
+    maintenance obligation. Its Validation Checklist is now runnable commands rather than prose
+    bullets, per workspace ADR-0009 (prefer a check that fails over a paragraph that instructs).
+  - `validate-quality-config` — new **Step 6: Validate Toolchain Floor vs Build Version**. Every
+    other check in that skill asserts two values *agree*; this one asserts they *differ*, which is
+    why it is easy to omit. It reports an error when CI builds at the declared floor, and warns on
+    `*-version-file` call sites outside the floor-compatibility job, on a floor nothing tests, and
+    on moving aliases (`stable`, `latest`). The error case is also wired into the skill's
+    automated validation script.
+
+  Drawn from a real failure: lowering a Go module's floor to widen compatibility silently moved
+  *every* build onto it, so release binaries were built against a standard library carrying two
+  known advisories — and the accompanying SBOM recorded that fact. A targeted fix then missed two
+  of the five workflows, because nothing recorded what each call site was supposed to read.
+
 ## [0.1.25] - 2026-07-16
 
 ### Fixed

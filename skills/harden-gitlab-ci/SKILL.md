@@ -3,7 +3,7 @@ name: harden-gitlab-ci
 description: Harden GitLab CI/CD pipelines for supply-chain security — SHA-pin `include:` and CI/CD components, scope the `CI_JOB_TOKEN` allowlist, protect and mask variables, pin job image digests, and use `id_tokens`/OIDC instead of long-lived secrets. Use when adding or auditing a `.gitlab-ci.yml`, before making a GitLab project public, when a supply-chain review flags CI gaps, or when standardizing pipeline hardening across GitLab projects (gitlab.com or self-hosted). GitLab-specific by design — for GitHub Actions use `harden-github-actions`; Forgejo/Gitea Actions are out of scope.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.25"
+  version: "0.1.26"
 license: MIT
 ---
 

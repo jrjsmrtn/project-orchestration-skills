@@ -3,7 +3,7 @@ name: setup-adrs
 description: Create the foundational Architecture Decision Record (ADR) sequence for a new project. Use after bootstrap-project, when establishing decision documentation, or when standardizing ADR practices.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.25"
+  version: "0.1.26"
 license: MIT
 ---
 

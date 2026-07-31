@@ -3,7 +3,7 @@ name: setup-pre-commit
 description: Configure two-stage pre-commit hooks for quality automation. Use after bootstrap-project and setup-adrs, when adding quality gates to an existing project, or when standardizing quality automation.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.25"
+  version: "0.1.26"
 license: MIT
 ---
 
@@ -47,6 +47,46 @@ Before configuring tools, create the single source of truth: `docs/reference/qua
 
 Single source of truth for all quality settings.
 
+## Toolchain Versions
+
+Three roles, and conflating them ships defects. Record all three even when two coincide today.
+
+| Role | Version | Declared in | Meaning |
+|------|---------|-------------|---------|
+| **Floor** | [oldest supported] | [manifest] | the oldest a *consumer* needs — a compatibility claim |
+| **Build** | [current] | [CI config] | what CI and releases are actually built with |
+| **Inherited** | [if any] | [sub-module manifest] | a floor a dependency forces on you, not one you chose |
+
+Per ecosystem, the floor lives in:
+
+| Ecosystem | Floor | Build version |
+|-----------|-------|---------------|
+| Go | `go` directive in `go.mod` | `go-version:` in the workflow |
+| Rust | `rust-version` (MSRV) in `Cargo.toml` | toolchain file / CI |
+| Python | `requires-python` in `pyproject.toml` | `python-version:` in CI |
+| Node | `engines.node` in `package.json` | `node-version:` in CI |
+| Elixir | `elixir` requirement in `mix.exs` | CI matrix |
+
+**Build with the current version, never the floor.** The floor states what a consumer needs;
+building at it means building against the least-patched runtime. Released artifacts embed that
+runtime — and if you publish an SBOM, they *record* it — so building at the floor can publish a
+known-vulnerable runtime and document the fact in the accompanying BOM.
+
+**Prove the floor separately.** One CI job builds and tests at exactly the declared floor, so the
+compatibility claim is verified rather than aspirational. Do **not** run vulnerability scanning
+there: an old toolchain has old advisories by definition, which is a reason not to *ship* it, not a
+reason to stop supporting it.
+
+**Record the per-call-site intent.** List every place a toolchain version is selected and why it
+reads what it reads. A partial fix is the common failure — updating the two obvious workflows and
+missing the scheduled scan.
+
+**Record the maintenance obligation.** Pin the build *line* rather than tracking `latest`, so a new
+major release cannot change what you ship without a commit; patch releases within the line still
+arrive, which is how runtime security fixes reach you. Nothing automates the major bump — dependency
+bots do not manage CI toolchain versions — so name it as a periodic, deliberate act. Its failure
+mode is silent.
+
 ## Formatting Standards
 
 | Setting | Value | Applies To |
@@ -73,11 +113,31 @@ Single source of truth for all quality settings.
 
 ## Validation Checklist
 
-- [ ] .editorconfig matches Formatting Standards
+Commands with expected output, not reminders — a reader or an agent should be able to run these
+and compare. Substitute the ecosystem's own commands; the shape is what matters.
+
+```bash
+# Every build-version selector in CI names the same pinned line (expect ONE distinct value):
+grep -rhoE '(go|python|node|otp|elixir)-version:[[:space:]]*"?[^"[:space:]]+' .github/workflows/ \
+  | tr -d '"' | sort -u
+
+# Only the floor-compatibility job reads the floor from the manifest (expect exactly the jobs
+# listed in the per-call-site table above — nothing else):
+grep -rn 'version-file' .github/workflows/
+
+# The floor still builds and tests (Go shown; use the ecosystem's pinning mechanism):
+GOTOOLCHAIN=go[FLOOR] go build ./... && GOTOOLCHAIN=go[FLOOR] go test ./...
+
+# Vulnerability scanning is clean ON THE BUILD VERSION, not the floor:
+[govulncheck ./... | pip-audit | cargo audit | mix deps.audit]
+
+# Local hooks and CI run the same commands (expect the same tool invocations on both sides):
+grep -oE '(gofmt|go vet|go test|ruff|mix format|cargo fmt)[^"]*' .lefthook.yml | sort -u
+grep -oE '(gofmt|go vet|go test|ruff|mix format|cargo fmt)[^"]*' .github/workflows/ci.yml | sort -u
+```
+
+- [ ] `.editorconfig` matches Formatting Standards
 - [ ] Linter configs match line length and indent
-- [ ] Pre-commit runs all "Pre-commit: Yes" checks
-- [ ] Pre-push runs all "Pre-push: Yes" checks
-- [ ] CI runs all checks marked "CI: Yes"
 ```
 
 > **Pattern Reference**: See [CONSISTENT-QUALITY-GATES](https://github.com/jrjsmrtn/ai-assisted-project-orchestration/blob/develop/docs/patterns/quality/consistent-quality-gates.md)
