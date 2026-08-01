@@ -267,7 +267,11 @@ provenance:
     # private-repository: true   # add if the repo is private
 ```
 
-This attaches a `.intoto.jsonl` to the release. Ship a consumer guide at `docs/howto/verifying-releases.md`:
+This attaches a `.intoto.jsonl` to the release. **Verify it in CI before the release is done — a
+required gate, not only a consumer guide:** run `slsa-verifier verify-artifact` against the built
+output in the release run, so provenance that no one could verify fails the release (same ADR-0009
+rung-1 reason as the cosign verify step below). Ship the identical command as a consumer guide at
+`docs/howto/verifying-releases.md`:
 
 ```bash
 slsa-verifier verify-artifact \
@@ -275,6 +279,20 @@ slsa-verifier verify-artifact \
   --source-uri github.com/{owner}/{repo} \
   <artifact>
 ```
+
+> **Signing a raw blob with cosign (optional — SLSA already covers build provenance).** If a release
+> additionally wants a detached cosign signature over a binary/tarball, use the **cosign v3 bundle
+> form** — the pre-v3 `cosign sign-blob --output-signature … --output-certificate …` flag pair was
+> **removed** and now fails with `create bundle file: open :` (verified against cosign 3.1.1). Sign,
+> then verify back as a gate:
+>
+> ```bash
+> cosign sign-blob   --yes --bundle <artifact>.sigstore.json <artifact>
+> cosign verify-blob --bundle <artifact>.sigstore.json \
+>   --certificate-identity-regexp '^https://github.com/{owner}/{repo}/\.github/workflows/<wf>\.yml@refs/' \
+>   --certificate-oidc-issuer   'https://token.actions.githubusercontent.com' \
+>   <artifact>
+> ```
 
 **Container images → cosign keyless signing** (OIDC, no keys). Sign the image **by digest** in the publish job:
 
@@ -284,10 +302,18 @@ publish:
   permissions: { contents: read, packages: write, id-token: write }
   steps:
     - uses: sigstore/cosign-installer@<sha>   # v3, SHA-pinned
-    - run: cosign sign --yes "${IMAGE}@${DIGEST}"   # DIGEST from the build-push step
+    - run: cosign sign --yes "${IMAGE}@${DIGEST}"     # DIGEST from the build-push step
+    - run: |                                          # verify the signature just made — required gate
+        cosign verify "${IMAGE}@${DIGEST}" \
+          --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+          --certificate-identity-regexp '^https://github.com/{owner}/{repo}/\.github/workflows/<wf>\.yml@refs/tags/v'
 ```
 
-Document consumer verification in the README (note the issuer is a full `https://` URL, the source-uri above is not):
+**Verify in the same job — signing is not the control; a *verifiable* signature is.** Producing a
+signature and never checking it back means a signature no consumer could verify ships silently; the
+`cosign verify` step above (by **digest**, same job) fails the release instead (ADR-0009 rung 1).
+Document the same command by tag for consumers in the README (note the issuer is a full `https://`
+URL, the source-uri is not):
 
 ```bash
 cosign verify {registry}/{owner}/{repo}:<tag> \
@@ -295,9 +321,9 @@ cosign verify {registry}/{owner}/{repo}:<tag> \
   --certificate-identity-regexp '^https://github.com/{owner}/{repo}/\.github/workflows/<wf>\.yml@refs/tags/v'
 ```
 
-The release **workflow** itself (job permissions, the SLSA-generator tag-pin exception, SHA-pinned `cosign-installer`) is hardened by `harden-github-actions`. This step's job at wrap-up is to confirm the release carries an SBOM + provenance/signing appropriate to its artifact type, and that a verification guide exists.
+The release **workflow** itself (job permissions, the SLSA-generator tag-pin exception, SHA-pinned `cosign-installer`) is hardened by `harden-github-actions`. This step's job at wrap-up is to confirm the release carries an SBOM + provenance/signing appropriate to its artifact type, that the **release run verifies its own signature/attestation** as a gate (not merely that a consumer guide exists), and that a verification guide exists.
 
-> **Grounding**: SLSA + EU CRA (build integrity, SBOM) and EEF Ægis trusted publishing (Hex/BEAM). These are the `ships-artifacts` controls from the distribution-profile axis (see `bootstrap-project`). Note: signing and SLSA provenance are per-artifact-type — cosign for images, slsa-verifier for tarballs/binaries; don't conflate them.
+> **Grounding**: SLSA + EU CRA (build integrity, SBOM) and EEF Ægis trusted publishing (Hex/BEAM). These are the `ships-artifacts` controls from the distribution-profile axis (see `bootstrap-project`). Note: signing and SLSA provenance are per-artifact-type — cosign for images, slsa-verifier for tarballs/binaries; don't conflate them — and **each must be verified back in the release run**, since a signature or attestation is a control only once something checks it.
 
 ### Step 12: Prepare Next Sprint
 
@@ -318,6 +344,7 @@ This skill creates/updates:
 **`ships-artifacts` profile** (release-time):
 - [ ] SBOM attached (syft: `sbom.spdx.json` + `sbom.cdx.json`)
 - [ ] SLSA provenance (`.intoto.jsonl`) for binary/tarball releases, **or** cosign signature for container images
+- [ ] Release run **verifies its own** signature/attestation as a gate — `cosign verify` by digest (image) / `slsa-verifier verify-artifact` (tarball/binary) / `cosign verify-blob --bundle` (raw blob) — not only a consumer guide
 - [ ] Consumer verification guide (`docs/howto/verifying-releases.md` and/or a README `cosign verify` block)
 
 ## Validation
@@ -336,7 +363,7 @@ git tag -l "v0.1.x"
 ls docs/sprints/sprint-NNNN-retrospective.*
 ```
 
-**`ships-artifacts` profile**: confirm the release attached an SBOM and the right integrity evidence for its artifact type — a `.intoto.jsonl` that `slsa-verifier` accepts (tarball/binary) or a signature that `cosign verify` accepts (image) — and that a verification guide exists.
+**`ships-artifacts` profile**: confirm the release attached an SBOM and the right integrity evidence for its artifact type — a `.intoto.jsonl` that `slsa-verifier` accepts (tarball/binary) or a signature that `cosign verify` accepts (image) — that **the release run itself performed that verification as a gate** (not only that a consumer guide exists), and that a verification guide exists. For any cosign **blob** signature, confirm it uses the v3 `--bundle` form (the removed `--output-signature`/`--output-certificate` flags fail with `create bundle file: open :`).
 
 ## Related Skills
 
