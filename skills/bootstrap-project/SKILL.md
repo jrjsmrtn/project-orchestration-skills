@@ -154,6 +154,15 @@ features/               # or test/features/ depending on ecosystem
    - Create `develop` branch from `main`
    - Set `develop` as default working branch
 
+   > **Interacts with OpenSSF Scorecard** (if you add `harden-github-actions`' Scorecard workflow).
+   > Scorecard's content analysis runs against the **default branch**, so making `develop` the default
+   > means the published score describes the **integration** branch, not the `main` releases are cut
+   > from. (The `Branch-Protection` check is the exception — it also inspects release branches — but
+   > `Pinned-Dependencies`, `Dangerous-Workflow`, `Token-Permissions`, etc. read the default branch.)
+   > Two honest resolutions: keep `develop` default and protect/harden it as the graded branch, or make
+   > `main` the default and treat `develop` as a long-lived branch. Decide deliberately — see
+   > `harden-github-actions` Step 6.
+
 ### Phase 3: Create CLAUDE.md
 
 Generate a project-specific CLAUDE.md with:

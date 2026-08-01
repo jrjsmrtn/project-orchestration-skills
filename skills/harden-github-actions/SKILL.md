@@ -193,6 +193,18 @@ jobs:
 
 On a **private** repo set `publish_results: false` — but note that several Scorecard *checks* also fail to run while private (`Resource not accessible by integration`); prefer gating the whole job on visibility so it self-activates at the public gate (see **Step 7b**).
 
+**Scorecard grades the default branch — mind gitflow.** Scorecard's content analysis runs against the
+repository's **default branch** (a `workflow_dispatch` against another ref is refused with `only default
+branch is supported` — observed directly). If the project follows the gitflow that `bootstrap-project`
+sets up, `develop` is the default, so the published score describes the **integration** branch, not the
+`main` that releases are cut from — the repo is graded on a branch its consumers never fetch. The one
+documented exception is the **`Branch-Protection`** check, which evaluates a project's *default **and**
+release* branches (verified against the Scorecard docs); the content-analysis checks
+(`Pinned-Dependencies`, `Dangerous-Workflow`, `Token-Permissions`, …) do not. Two honest resolutions:
+accept that `develop` is graded and protect/harden it accordingly, or make `main` the default and treat
+`develop` as a long-lived branch. Pick one on purpose — this gap lives only where the gitflow
+recommendation and the Scorecard workflow meet, so neither skill alone would surface it.
+
 ### Step 7: Release provenance (if the project ships artifacts)
 
 For projects that publish artifacts/images/packages, attach SLSA build provenance at release. Hash the build outputs, then hand off to the generator — referenced **by tag** (the sanctioned exception to Step 2):
