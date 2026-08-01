@@ -240,15 +240,37 @@ git push origin develop --tags
 
 For `ships-artifacts` projects the release must carry integrity evidence. The controls depend on the **artifact type** — they are separate patterns, not one pipeline:
 
-**SBOM (any artifact type)** — one syft pass emits both formats, daemonless (export an image to an archive first, then scan from disk):
+**SBOM — catalogue the *released artifact*, one SBOM per artifact, not the source tree.** Scanning the
+repo (`syft scan .`) catalogues your CI config, not what you ship: a tree with GitHub Actions
+workflows yields `pkg:github/…` components and **no** ecosystem or standard-library packages at all
+(verified against syft 1.36.0). Scan the **built artifact** — the compiled binary, the image archive,
+the wheel — so the SBOM carries the linked dependency graph and, for compiled languages, the standard
+library (`pkg:golang/stdlib@…`, which is what stdlib advisories match on). One syft pass emits both
+formats, daemonless (export an image to an archive first, then scan from disk):
 
 ```bash
-syft scan <dir|archive> -q \
+syft scan <built-binary|image-archive|wheel> -q \
   -o spdx-json=sbom.spdx.json \
   -o cyclonedx-json=sbom.cdx.json
 ```
 
-Attach both to the release (or upload as a CI artifact). Covers the EU CRA SBOM expectation.
+**Assert the subject in CI so the wrong one cannot regress silently** (ADR-0009 — a gate, not a note).
+Fail the release if the SBOM carries the source-tree tell-tale, or (for a compiled language) lacks its
+standard library:
+
+```bash
+jq -e '[.components[].purl // empty] | any(startswith("pkg:github"))' sbom.cdx.json >/dev/null \
+  && { echo "SBOM catalogued the repo, not the artifact"; exit 1; } || true
+# compiled languages only — expect the stdlib in a binary's SBOM:
+jq -e '[.components[].purl // empty] | any(startswith("pkg:golang/stdlib"))' sbom.cdx.json >/dev/null \
+  || { echo "no stdlib — did you scan the source tree instead of the binary?"; exit 1; }
+```
+
+Two syft quirks worth pinning: on PE (Windows) binaries it adds an `application` component with
+`version=UNKNOWN` and dozens of CPEs permuted from the filename (false-positive fuel) — restrict with
+`--select-catalogers`; and a `file:` scan records the **absolute scan path** in the `file` component
+(verified), so run it from a stable path. Attach both formats to the release (or upload as a CI
+artifact). Covers the EU CRA SBOM expectation.
 
 **Binary / source-tarball releases → SLSA provenance.** In the release workflow, hash the build outputs and hand off to the **tag-pinned** generator (the sanctioned exception to SHA-pinning):
 
@@ -354,7 +376,7 @@ This skill creates/updates:
 - [ ] Git tag: `v0.1.x`
 
 **`ships-artifacts` profile** (release-time):
-- [ ] SBOM attached (syft: `sbom.spdx.json` + `sbom.cdx.json`)
+- [ ] SBOM attached (syft: `sbom.spdx.json` + `sbom.cdx.json`), scanned from the **built artifact** not the source tree, with a CI subject assertion (no `pkg:github`; stdlib present for compiled langs)
 - [ ] SLSA provenance (`.intoto.jsonl`) for binary/tarball releases, **or** cosign signature for container images
 - [ ] Release created by an **idempotent `publish` job** (notes from CHANGELOG whether or not it exists), with `provenance: needs: [build, publish]` so the SLSA generator uploads to it rather than creating a bare, notesless release
 - [ ] Release run **verifies its own** signature/attestation as a gate — `cosign verify` by digest (image) / `slsa-verifier verify-artifact` (tarball/binary) / `cosign verify-blob --bundle` (raw blob) — not only a consumer guide
