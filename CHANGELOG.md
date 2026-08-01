@@ -8,6 +8,47 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.27] - 2026-08-01
+
+Workspace **Sprint 1 — Release & CI-Publishing Integrity** (roadmap H13, H14, H20, H21, H22): five
+defects in the release/CI-publishing path, all surfaced by *exercising* `ansible-bom`'s first real
+release rather than by reading the skills. Every claim verified against the installed tool
+(cosign 3.1.1, syft 1.36.0) or the vendor docs, not asserted.
+
+### Added
+
+- `harden-github-actions` **Step 7b — private-repository matrix** (H13): three controls behave
+  differently while a repo is private, for two distinct reasons. *Cannot run:* OpenSSF Scorecard
+  (`Resource not accessible by integration`; the PAT workaround is a long-lived secret to grade an
+  unpublishable repo) and dependency-review (needs GitHub Advanced Security). *Should not run:*
+  keyless cosign/SLSA — they work, but Sigstore writes the repo name + workflow path to the **public
+  Rekor transparency log**, publishing exactly what privacy protects. Fix is the reusable
+  `if: ${{ !github.event.repository.private }}` gate so controls **self-activate at the public gate**.
+- `harden-github-actions` / `bootstrap-project` — **Scorecard grades the default branch** note (H22).
+  Scorecard's content analysis runs on the default branch, which gitflow makes `develop`, so the
+  published score describes the integration branch, not the `main` releases are cut from. Verified
+  against the Scorecard docs: the `Branch-Protection` check *does* also cover release branches, the
+  content-analysis checks do not — so the note is precise, with the two honest resolutions.
+
+### Fixed
+
+- `wrapup-sprint` / (`supply-chain` in project-maintenance-skills) — **verify signatures back as a
+  release gate** (H20). The guidance produced a signature but never verified it, so a signature no
+  consumer could verify would ship silently. Every path now verifies in the release run
+  (`cosign verify` by digest / `slsa-verifier` / `cosign verify-blob --bundle`). Also documents the
+  **cosign v3 bundle** form for blob signing — the removed v2 `--output-signature`/`--output-certificate`
+  flags now fail with `create bundle file: open :`. (Premise corrected: the broken v2 flags were never
+  in the skills; the image path uses `cosign sign`, unbroken in v3.)
+- `wrapup-sprint` / `harden-github-actions` — **release-job ordering** (H21). `slsa-github-generator`
+  with `upload-assets: true` *creates* the release when absent, so `provenance: needs: [build]` races
+  the publish job and often wins, producing a bare, notesless release (mirror failure: `release not
+  found`). Fixed to an idempotent `publish` job + `provenance: needs: [build, publish]`; the ordering
+  now travels with the copy-paste source in Step 7.
+- `wrapup-sprint` / (`supply-chain`) — **SBOM must catalogue the built artifact, not the source tree**
+  (H14). Scanning the repo dir yields `pkg:github/*` and no ecosystem/stdlib packages (what stdlib
+  advisories match on); scan the binary/image/wheel instead. Adds a **runnable** CI subject assertion
+  (fail on any `pkg:github`; require stdlib for compiled langs), tested end-to-end with syft + jq.
+
 ## [0.1.26] - 2026-07-31
 
 ### Added

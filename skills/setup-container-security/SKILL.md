@@ -3,7 +3,7 @@ name: setup-container-security
 description: Harden container images (Containerfile/Dockerfile) for supply-chain security — digest-pinned bases, non-root runtime, verified artifact fetches, hadolint/shellcheck linting, and grype + syft SBOM scanning. Use when a project builds a container image, before publishing an image to a registry, or when auditing container security.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.26"
+  version: "0.1.27"
 license: MIT
 ---
 
