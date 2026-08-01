@@ -191,7 +191,7 @@ jobs:
           sarif_file: results.sarif
 ```
 
-On a **private** repo set `publish_results: false` and flip it to `true` at public release.
+On a **private** repo set `publish_results: false` — but note that several Scorecard *checks* also fail to run while private (`Resource not accessible by integration`); prefer gating the whole job on visibility so it self-activates at the public gate (see **Step 7b**).
 
 ### Step 7: Release provenance (if the project ships artifacts)
 
@@ -215,6 +215,28 @@ For projects that publish artifacts/images/packages, attach SLSA build provenanc
 ```
 
 Provenance, SBOM (syft), and keyless signing (cosign) at release time are owned by `wrapup-sprint`'s release step — this skill wires the workflow permissions and the tag-pin exception that make them safe. Note the `needs: [build, publish]` above: because `upload-assets: true` makes the generator *create* the release when it runs first, provenance must follow the job that publishes it with changelog notes — the idempotent create-release step is detailed in `wrapup-sprint`.
+
+### Step 7b: Private repositories — gate visibility-sensitive controls
+
+Several controls above behave differently while the repo is private, for **two distinct reasons** —
+*cannot run* and *should not run* — and neither is obvious until you run them (the failures arrive at
+the first scheduled Scorecard run and Dependabot's first PR). The honest default is to **self-activate
+them at the public gate** rather than leave a manual step to remember. Gate the job (or step) on
+visibility:
+
+```yaml
+if: ${{ !github.event.repository.private }}   # runs only when the repo is public
+```
+
+| Control | While private | Why | Public |
+|---------|---------------|-----|--------|
+| **OpenSSF Scorecard** (Step 6) | Several checks **cannot run** — `Resource not accessible by integration` (Branch-Protection / Contributors query an API the default `GITHUB_TOKEN` cannot reach on a private repo). The workaround is a **PAT**: a long-lived secret added only to grade a repo whose results can't be published anyway. | Elevated read scopes the default token lacks on private repos. | Runs on the default token; set `publish_results: true`. |
+| **Keyless cosign / SLSA provenance** (Step 7) | *Works, but should not run.* Sigstore writes the signing identity — **repo name + workflow path** — to **Rekor, a public append-only transparency log**. Signing a private repo's artifacts publishes exactly what privacy protects. | Rekor is public by design; keyless certs embed the source identity. | Sign + attest freely — the identity is already public. |
+| **dependency-review** (CI, owned by `public-release`) | Needs **GitHub Advanced Security** on private repos; errors without it (surfaces on Dependabot's first PR). | The dependency-review API is GHAS-gated for private repos. | Works on public repos with no GHAS. |
+
+Prefer the `if:` gate over hard-coded toggles like `publish_results: false`: the control flips itself
+the instant the repo goes public, with nothing to remember. (Scorecard's `publish_results` boolean is
+the one field that still needs an explicit value alongside the gate.)
 
 ### Step 8: Remaining hardening
 
