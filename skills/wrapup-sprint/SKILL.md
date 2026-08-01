@@ -258,7 +258,7 @@ Attach both to the release (or upload as a CI artifact). Covers the EU CRA SBOM 
   run: cd dist && echo "hashes=$(sha256sum * | base64 -w0)" >> "$GITHUB_OUTPUT"
 
 provenance:
-  needs: [build]
+  needs: [build, publish]   # AFTER the job that creates the release — see the ordering note
   permissions: { actions: read, id-token: write, contents: write }
   uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
   with:
@@ -266,6 +266,18 @@ provenance:
     upload-assets: true
     # private-repository: true   # add if the repo is private
 ```
+
+> **Ordering — do not let the generator create your release.** With `upload-assets: true` the
+> generator **creates the GitHub release if one does not already exist**, and the release it creates
+> is bare: `prerelease=false`, **no changelog notes** (observed on a real tag). If the provenance job
+> only `needs: [build]`, it races the job that publishes the release and often wins — you get a
+> notesless release that the publish job then finds already present and leaves unconfigured. The
+> mirror failure is `release not found`, when a publish job instead assumes a release it did not
+> create. Fix both directions: create the release in a **`publish`** job with an **idempotent** step
+> (set notes from the CHANGELOG *whether or not* the release already exists — e.g. `gh release create
+> … || gh release edit …`), and order provenance **after** it (`needs: [build, publish]`). The
+> generator then uploads `.intoto.jsonl` to the already-configured release instead of creating a bare
+> one. Neither failure is visible until a real tag is pushed — exercise it on a throwaway tag first.
 
 This attaches a `.intoto.jsonl` to the release. **Verify it in CI before the release is done — a
 required gate, not only a consumer guide:** run `slsa-verifier verify-artifact` against the built
@@ -344,6 +356,7 @@ This skill creates/updates:
 **`ships-artifacts` profile** (release-time):
 - [ ] SBOM attached (syft: `sbom.spdx.json` + `sbom.cdx.json`)
 - [ ] SLSA provenance (`.intoto.jsonl`) for binary/tarball releases, **or** cosign signature for container images
+- [ ] Release created by an **idempotent `publish` job** (notes from CHANGELOG whether or not it exists), with `provenance: needs: [build, publish]` so the SLSA generator uploads to it rather than creating a bare, notesless release
 - [ ] Release run **verifies its own** signature/attestation as a gate — `cosign verify` by digest (image) / `slsa-verifier verify-artifact` (tarball/binary) / `cosign verify-blob --bundle` (raw blob) — not only a consumer guide
 - [ ] Consumer verification guide (`docs/howto/verifying-releases.md` and/or a README `cosign verify` block)
 

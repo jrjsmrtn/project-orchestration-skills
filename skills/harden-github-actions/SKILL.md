@@ -199,7 +199,9 @@ For projects that publish artifacts/images/packages, attach SLSA build provenanc
 
 ```yaml
   provenance:
-    needs: [build]
+    # MUST run after the job that creates the release: with upload-assets:true the generator
+    # creates the release itself when absent, racing publish and producing a bare, notesless one.
+    needs: [build, publish]
     permissions:
       actions: read
       id-token: write
@@ -212,7 +214,7 @@ For projects that publish artifacts/images/packages, attach SLSA build provenanc
       upload-assets: true
 ```
 
-Provenance, SBOM (syft), and keyless signing (cosign) at release time are owned by `wrapup-sprint`'s release step — this skill wires the workflow permissions and the tag-pin exception that make them safe.
+Provenance, SBOM (syft), and keyless signing (cosign) at release time are owned by `wrapup-sprint`'s release step — this skill wires the workflow permissions and the tag-pin exception that make them safe. Note the `needs: [build, publish]` above: because `upload-assets: true` makes the generator *create* the release when it runs first, provenance must follow the job that publishes it with changelog notes — the idempotent create-release step is detailed in `wrapup-sprint`.
 
 ### Step 8: Remaining hardening
 
