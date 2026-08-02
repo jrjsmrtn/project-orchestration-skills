@@ -208,6 +208,24 @@ Analyze the landscape, options, and constraints:
 | [Dep 1] | Technical/Organizational | Available/Pending | [impact] |
 | [Dep 2] | Technical/Organizational | Available/Pending | [impact] |
 
+### Upstream Acceptance (if the plan depends on a third party *accepting* something)
+
+When viability rests on an **external party accepting a contribution** — an upstream merge, a
+registry/standard entry, a partner integration — model what they **require of you**, not only whether
+they would want it. *"Will they want it?"* and *"what do they require of me?"* are two questions; the
+second is usually cheaper and answerable **before any code is written**.
+
+| Upstream | What we need accepted | Acceptance requirement | Met? | Cost to meet |
+|----------|-----------------------|------------------------|------|--------------|
+| [e.g. anchore/syft] | [a new cataloger] | DCO / CLA / AI-policy / inbound licence / test bar | Yes/No/Unknown | Low/Med/High |
+
+Confirm each, before building — read `CONTRIBUTING`, the DCO/CLA, and a few recent merged PRs:
+
+- **Contribution agreement** — DCO (`Signed-off-by`, retroactive-fixable) vs a **CLA** (may be a hard stop for some contributors or employers). Which, and can you sign it?
+- **AI-contribution policy** — some projects restrict, ban, or require *disclosure* of AI-generated contributions. Against a project that bans them, unaware work is wasted **entirely**; disclosure is cheap only if known up front.
+- **Inbound licence compatibility** — your contribution must be licensable under *their* terms. This is the **opposite direction** from the `Dependencies` check (you consuming their licence) and is easy to conflate.
+- **Governance & responsiveness** — who decides, how long merges take, whether the maintainer is active. A technically-welcome contribution can still stall for months.
+
 ### Competitive Analysis (if applicable)
 
 | Competitor | Strengths | Weaknesses | Differentiation |
@@ -215,7 +233,9 @@ Analyze the landscape, options, and constraints:
 | [Comp 1] | [strengths] | [weaknesses] | [how we differ] |
 ```
 
-**AI Assistance**: Use web search and Explore agents to research existing solutions, competitors, and technology options.
+**Why Upstream Acceptance is its own subsection**: `Dependencies` models what the project *consumes* and needs to stay *available*; Upstream Acceptance models what the project must *satisfy* to be *accepted* — a different failure mode. Grounding (a real case): a project whose distribution strategy rested on contributing a cataloger to an upstream analysed thoroughly whether the upstream would *want* it, but never what it *required of a contributor* — DCO sign-off, and an (absent, that time) AI-contribution policy, were discovered only after the code was written and the PR opened. Benign there; against a project that bans AI contributions the whole effort would have been wasted, and surfaced at submission rather than at decision time.
+
+**AI Assistance**: Use web search and Explore agents to research existing solutions, competitors, and technology options — and, for any Upstream Acceptance row, to read the upstream's `CONTRIBUTING`, DCO/CLA, and AI-contribution policy before work starts.
 
 ### Phase 4: Risk Assessment
 
@@ -288,6 +308,17 @@ Identify what's known and what gaps exist:
 |-----|---------------------|-------------------|-------|
 | [Gap 1] | [impact] | [how to research] | [who] |
 | [Gap 2] | [impact] | [how to research] | [who] |
+
+### Upstream Acceptance Gaps (obligations to satisfy, not dependencies to consume)
+For every party the plan needs to *accept* something (Phase 3 → Upstream Acceptance), the cheapest gap
+to close **first** is what they require of a contributor — resolve it before building, not at
+submission. A standing category because the rest of Phase 5 assesses knowledge for *building*; this
+assesses knowledge for *being accepted*, and it is the one gap that is both cheap to answer and able to
+invalidate the whole plan.
+
+| Upstream | Requirement to confirm | How to check | Blocks the plan if unmet? |
+|----------|------------------------|--------------|---------------------------|
+| [upstream] | DCO vs CLA; AI-policy; inbound licence; review/test bar | read `CONTRIBUTING` / DCO / CLA / recent merged PRs | Yes/No |
 
 ### Domain Expertise Needed
 - [Domain 1]: [current capability] → [needed capability]
