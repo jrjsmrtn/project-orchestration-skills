@@ -8,6 +8,23 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.28] - 2026-08-02
+
+Workspace **Sprint 2 — Inception & Establishment** (roadmap H11; the po half — H24 shipped the new
+`workspace-skills` plugin separately).
+
+### Added
+
+- `analyze-project` — **upstream acceptance criteria at inception** (H11). SPARK's Analysis phase
+  modelled dependencies you *consume* but had no place for obligations you must *satisfy* to be
+  *accepted* by a third party. Phase 3 gains an **Upstream Acceptance** subsection (when viability
+  rests on an external party accepting a contribution, model what they require *of you* — DCO vs CLA,
+  AI-contribution policy, inbound licence compatibility, governance/responsiveness — answerable before
+  any code), and Phase 5 an **Upstream Acceptance Gaps** category (obligations to satisfy, distinct
+  from build-knowledge gaps). Grounded in a real case: a distribution strategy resting on an upstream
+  cataloger contribution analysed whether the upstream would *want* it but never what it *required of
+  a contributor* — DCO sign-off and an (absent) AI-policy found only after the code was written.
+
 ## [0.1.27] - 2026-08-01
 
 Workspace **Sprint 1 — Release & CI-Publishing Integrity** (roadmap H13, H14, H20, H21, H22): five
