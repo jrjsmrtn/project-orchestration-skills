@@ -3,7 +3,7 @@ name: harden-gitlab-ci
 description: Harden GitLab CI/CD pipelines for supply-chain security — SHA-pin `include:` and CI/CD components, scope the `CI_JOB_TOKEN` allowlist, protect and mask variables, pin job image digests, and use `id_tokens`/OIDC instead of long-lived secrets. Use when adding or auditing a `.gitlab-ci.yml`, before making a GitLab project public, when a supply-chain review flags CI gaps, or when standardizing pipeline hardening across GitLab projects (gitlab.com or self-hosted). GitLab-specific by design — for GitHub Actions use `harden-github-actions`; Forgejo/Gitea Actions are out of scope.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.28"
+  version: "0.1.29"
 license: MIT
 ---
 
@@ -19,7 +19,7 @@ Harden GitLab CI/CD pipelines against supply-chain attack: pin what runs, minimi
 
 ## When to Use
 
-- When adding a `.gitlab-ci.yml` to a project (after `setup-pre-commit`)
+- When adding a `.gitlab-ci.yml` to a project (after `setup-git-hooks`)
 - When auditing an existing pipeline before making a GitLab project public
 - When a supply-chain review (or the `supply-chain` skill) flags CI hardening gaps
 - When standardising pipeline hardening across GitLab projects
@@ -300,7 +300,7 @@ Re-run the Phase 2 inventory and confirm nothing resolves to a moving target.
 - `harden-github-actions` — the sibling for GitHub Actions. Same intent, different execution model; neither is a translation of the other
 - `setup-adrs` — record the decisions this surfaces: an accepted `include: remote` host, retained allowlist entries, a justified `privileged` runner
 - `setup-container-security` — base-image digest pinning and the skopeo bump procedure this reuses for job images
-- `setup-pre-commit` — local quality gates; this skill hardens the CI that enforces them
+- `setup-git-hooks` — local quality gates; this skill hardens the CI that enforces them
 - `validate-quality-config` — *reads* CI to confirm parity with local hooks; it does not check pinning, permissions, or provenance. Complementary
 - `supply-chain` (**project-maintenance-skills**) — the audit that flags CI hardening gaps; this skill closes them
 - `wrapup-sprint` — release provenance for `ships-artifacts` projects, which consumes the OIDC path established here

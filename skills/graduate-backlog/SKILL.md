@@ -3,7 +3,7 @@ name: graduate-backlog
 description: Graduate a project's in-repo backlog (roadmap phases, sprint deliverables, ADRs) onto a forge issue tracker at a thin-hybrid default, once the backlog outgrows a single contributor. Use when a team needs to see and claim work that currently lives only in docs/roadmap and docs/sprints, when a repo has a mature in-repo roadmap but an empty tracker, when open-sourcing a project, or when deciding what work should stay in-repo versus live on a GitHub, GitLab, Codeberg/Forgejo, or self-hosted internal tracker.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.28"
+  version: "0.1.29"
 license: MIT
 ---
 

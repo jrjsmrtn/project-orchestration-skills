@@ -8,6 +8,42 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.29] - 2026-08-03
+
+### Changed
+
+- **BREAKING: `setup-pre-commit` renamed to `setup-git-hooks`** (workspace ADR-0013). Invoke
+  `setup-git-hooks` from now on.
+
+  A **deprecation stub remains at the old name until 0.2.0**, carrying no procedure — only a pointer
+  to the new one. The skill, plugin and marketplace manifests provide no rename, alias or redirect
+  field (verified across all three), so content-level deprecation is the only graceful path the
+  format offers, and it is what the official guidance prescribes.
+
+  The old name was wrong on two axes at once. It named **one of the two stages** the skill sets up:
+  the skill's thesis is the two-stage split (fast pre-commit, thorough pre-push), and pre-push is
+  roughly a third of its content, carrying the checks that catch the expensive defects. And it named
+  **one of the two supported hook managers**, when the skill already documents both — Step 4
+  (Install Hook Framework) mentions `lefthook` more often than `pre-commit`, and Steps 1, 2, 3 and 7
+  (138 lines of `.editorconfig`, secret-detection architecture, `.gitignore` hardening and
+  multi-remote protection) mention neither.
+
+  Roughly half the skill is manager-neutral. The practical effect of the old name was that a
+  maintainer on an Elixir, Go or Rust project read "pre-commit", correctly inferred "that is the
+  Python hook framework", and never reached the content that had nothing to do with it — the same
+  failure as ADR-0008's `oss-maintenance` install boundary, one level down.
+
+  **Splitting into `setup-pre-commit` + `setup-lefthook` was considered and rejected**: it would
+  duplicate ~340 lines of manager-neutral content, and the manager-specific depth now lives in two
+  sibling how-to guides in the pattern-language repo instead.
+
+- Description now states the full scope: two-stage git hooks, either manager.
+- Plugin keyword `pre-commit` → `git-hooks`; `lefthook` added.
+- Cross-references updated in `bootstrap-project`, `setup-adrs`, `setup-container-security`,
+  `validate-quality-config`, `harden-github-actions` and `harden-gitlab-ci`, plus `README.md` and
+  `CLAUDE.md`. Historical CHANGELOG entries keep the old name deliberately — they record what
+  shipped at the time.
+
 ## [0.1.28] - 2026-08-02
 
 Workspace **Sprint 2 — Inception & Establishment** (roadmap H11; the po half — H24 shipped the new

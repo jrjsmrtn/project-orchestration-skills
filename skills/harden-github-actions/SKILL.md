@@ -3,7 +3,7 @@ name: harden-github-actions
 description: Harden GitHub Actions CI/CD workflows for supply-chain security — SHA-pin actions, least-privilege token permissions, verified toolchain installs, OpenSSF Scorecard, and SLSA provenance. Use when adding or auditing GitHub Actions workflows, before making a repository public, when a supply-chain review flags CI gaps, or when standardizing CI hardening across GitHub projects. GitHub-specific by design — GitLab CI and Forgejo Actions are out of scope.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.28"
+  version: "0.1.29"
 license: MIT
 ---
 
@@ -23,7 +23,7 @@ Harden GitHub Actions CI/CD workflows against supply-chain attack: pin what runs
 
 ## When to Use
 
-- When adding GitHub Actions workflows to a project (after `setup-pre-commit`)
+- When adding GitHub Actions workflows to a project (after `setup-git-hooks`)
 - When auditing existing `.github/workflows/` before making a repository public
 - When a supply-chain review (or the `supply-chain` skill) flags CI hardening gaps
 - When standardising CI hardening across GitHub projects
@@ -298,7 +298,7 @@ Optionally run `actionlint` for workflow-syntax validation, and check the repo's
 ## Related Skills
 
 - `harden-gitlab-ci` — the sibling for GitLab CI. Same intent, different execution model; neither is a translation of the other (GitLab's risks sit in `include:`/CI-Catalog components and the `CI_JOB_TOKEN` allowlist)
-- `setup-pre-commit` — local quality gates that CI mirrors
+- `setup-git-hooks` — local quality gates that CI mirrors
 - `validate-quality-config` — verifies CI/local parity (reads CI; does not harden it)
 - `wrapup-sprint` — release-time SBOM, SLSA provenance, and signing
 - `setup-container-security` — base-image digest pinning and image scanning

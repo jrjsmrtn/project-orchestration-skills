@@ -41,7 +41,7 @@ metadata:
 | bootstrap-project | Inception (scaffolding + initial roadmap) |
 | setup-adrs | Inception (architecture decisions) |
 | setup-architecture-as-code | Architecture (C4/Structurizr) |
-| setup-pre-commit | Quality (two-stage hooks) |
+| setup-git-hooks | Quality (two-stage hooks) |
 | validate-quality-config | Quality (config consistency) |
 | harden-github-actions | Quality (GitHub Actions supply-chain hardening — deliberately forge-bound) |
 | harden-gitlab-ci | Quality (GitLab CI supply-chain hardening — deliberately forge-bound; sibling of the above) |

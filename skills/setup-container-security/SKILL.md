@@ -3,7 +3,7 @@ name: setup-container-security
 description: Harden container images (Containerfile/Dockerfile) for supply-chain security — digest-pinned bases, non-root runtime, verified artifact fetches, hadolint/shellcheck linting, and grype + syft SBOM scanning. Use when a project builds a container image, before publishing an image to a registry, or when auditing container security.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.28"
+  version: "0.1.29"
 license: MIT
 ---
 
@@ -113,7 +113,7 @@ Anything downloaded at build time is attack surface — pin and verify:
       apt-get install -y --no-install-recommends /tmp/x.deb
   ```
 - **Source builds** — clone a pinned git **tag**, not a branch: `git clone --branch "${VERSION}" --depth 1 …`, `VERSION` an `ARG`.
-- **Language deps** — install from a committed lockfile (`npm ci`, mix from `mix.lock`) — see `setup-pre-commit`.
+- **Language deps** — install from a committed lockfile (`npm ci`, mix from `mix.lock`) — see `setup-git-hooks`.
 
 Never `curl … | sh` an installer, and never fetch a binary/model with no checksum gate.
 
@@ -224,6 +224,6 @@ test -s sbom.spdx.json && test -s sbom.cdx.json && echo "SBOM ok"
 
 - `harden-github-actions` - harden the image build/publish workflow (SHA-pin actions, least-privilege, cosign-installer)
 - `wrapup-sprint` - release-time SBOM + cosign signing for published images
-- `setup-pre-commit` - lockfile enforcement and the hadolint/shellcheck hooks
+- `setup-git-hooks` - lockfile enforcement and the hadolint/shellcheck hooks
 - `bootstrap-project` - the distribution profile (whether the project publishes artifacts); Dependabot config
 - `setup-adrs` - record the container-security checks and documented exceptions

@@ -51,7 +51,8 @@ gh skill install jrjsmrtn/project-orchestration-skills --dir ~/.vibe/skills
 
 | Skill | Description |
 |-------|-------------|
-| **setup-pre-commit** | Configure two-stage pre-commit hooks |
+| **setup-git-hooks** | Configure two-stage git hooks (pre-commit + pre-push) |
+| ~~setup-pre-commit~~ | *Deprecated 0.1.29 — renamed to `setup-git-hooks`; stub removed at 0.2.0* |
 | **validate-quality-config** | Validate consistency across quality configs |
 | **harden-github-actions** | Harden GitHub Actions workflows against supply-chain risk (SHA-pinned actions, least-privilege tokens, verified toolchains). GitHub-specific by design. |
 | **harden-gitlab-ci** | Harden GitLab CI/CD pipelines against supply-chain risk (SHA-pinned `include:`/components, job-token allowlist, masked+protected variables, `id_tokens`/OIDC). GitLab-specific by design. |
@@ -74,7 +75,7 @@ After installation, invoke skills using slash commands:
 /bootstrap-project
 /setup-adrs
 /setup-architecture-as-code
-/setup-pre-commit
+/setup-git-hooks
 /validate-quality-config
 /harden-github-actions
 /harden-gitlab-ci

@@ -3,7 +3,7 @@ name: bootstrap-project
 description: Bootstrap a new project at a chosen graduation tier (t0 minimum, t1 decision-tracked, t2 full pattern language) following AI-Assisted Project Orchestration best practices. Use when starting a new software project, promoting an existing project to a higher tier, or converting an existing project for AI-assisted development.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.28"
+  version: "0.1.29"
 license: MIT
 ---
 
@@ -87,11 +87,11 @@ This axis maps to recognized frameworks: **Public** → EU CRA "open-source stew
 | 5. Roadmap | — | — | yes |
 | 6. README.md | optional | yes | yes |
 | 7. Audience-traced artifacts | — | — | yes (if registry) |
-| 8. Invoke related skills | — | `setup-adrs`, `setup-pre-commit` | all |
+| 8. Invoke related skills | — | `setup-adrs`, `setup-git-hooks` | all |
 
 At **t0**, only Phases 2 (minimal `.gitignore`) and 3 (CLAUDE.md) are required. README is optional. No `docs/` tree, no ADR scaffolding, no changelog — those come with promotion to t1.
 
-At **t1**, add Phase 4 (CHANGELOG) and invoke `setup-adrs` (creates ADR-0001/0002/0003) and `setup-pre-commit`. Still no Diátaxis tree or C4 model.
+At **t1**, add Phase 4 (CHANGELOG) and invoke `setup-adrs` (creates ADR-0001/0002/0003) and `setup-git-hooks`. Still no Diátaxis tree or C4 model.
 
 At **t2**, run all phases. This is the existing default behavior.
 
@@ -390,7 +390,7 @@ After completing the bootstrap, suggest invoking based on tier:
 
 **Tier 1**:
 1. **setup-adrs** - Create ADR-0001, 0002, 0003 (and 0004 for Infrastructure/Hybrid)
-2. **setup-pre-commit** - Configure quality gates
+2. **setup-git-hooks** - Configure quality gates
 
 **Tier 2** (all of t1 plus):
 3. **setup-architecture-as-code** - Create `architecture/` directory, workspace.dsl, and docs symlink
@@ -477,7 +477,7 @@ When promoting an existing project from a lower tier to a higher one, this skill
 2. Invoke `setup-adrs` to scaffold ADR-0001, 0002, 0003 (+ 0004 if Infrastructure/Hybrid)
 3. Populate ADR content **from existing CLAUDE.md sections and commit history** — do not invent new rationale
 4. Initialize CHANGELOG.md with the current state derived from commit history
-5. Invoke `setup-pre-commit` for quality gates
+5. Invoke `setup-git-hooks` for quality gates
 6. Update CLAUDE.md `## Project Tier` section to `t1` and list new artifacts
 
 ### t1 → t2 graduation
@@ -504,7 +504,7 @@ This skill creates artifacts based on tier:
 - [ ] `README.md` (skeleton)
 - [ ] CLAUDE.md tier set to `t1`
 - [ ] (Via `setup-adrs`) ADR-0001, 0002, 0003 [+ 0004 Infrastructure/Hybrid]
-- [ ] (Via `setup-pre-commit`) Two-stage pre-commit hooks
+- [ ] (Via `setup-git-hooks`) Two-stage git hooks (pre-commit + pre-push)
 
 **Tier 2** (adds to t1):
 - [ ] `docs/` directory structure (Diátaxis): tutorials, howto, reference, explanation, adr, architecture, sprints, roadmap
@@ -551,7 +551,7 @@ Verify successful bootstrap based on tier:
 
 - `analyze-project` - Run SPARK analysis before bootstrap
 - `setup-adrs` - Next step: create foundational ADRs
-- `setup-pre-commit` - Configure pre-commit hooks
+- `setup-git-hooks` - Configure two-stage git hooks
 - `setup-architecture-as-code` - Create architecture model
 - `plan-sprint` - Create initial sprint plan
 - `public-release` (project-maintenance-skills) - Private→Public graduation gate (full go-public checklist)

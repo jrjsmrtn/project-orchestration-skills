@@ -3,7 +3,7 @@ name: setup-adrs
 description: Create the foundational Architecture Decision Record (ADR) sequence for a new project. Use after bootstrap-project, when establishing decision documentation, or when standardizing ADR practices.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.28"
+  version: "0.1.29"
 license: MIT
 ---
 
@@ -245,7 +245,7 @@ ADRs in `docs/adr/`, sprint plans in `docs/sprints/`, roadmap in `docs/roadmap/`
 - **REUSE compliance** ([reuse.software](https://reuse.software/)) for machine-readable copyright and license declarations
 - SPDX headers (`SPDX-FileCopyrightText`, `SPDX-License-Identifier`) on source files
 - License texts in `LICENSES/` directory, bulk/vendored annotations in `REUSE.toml`
-- **Enforced, not just prescribed**: `reuse lint` runs as a git hook and a CI job (`fsfe/reuse-action`) — see `setup-pre-commit`. Third-party/transitive license compatibility is covered by the mixed-license aggregate analysis where applicable.
+- **Enforced, not just prescribed**: `reuse lint` runs as a git hook and a CI job (`fsfe/reuse-action`) — see `setup-git-hooks`. Third-party/transitive license compatibility is covered by the mixed-license aggregate analysis where applicable.
 
 ### 12. Code Conventions
 
@@ -556,5 +556,5 @@ Verify successful ADR creation:
 ## Related Skills
 
 - `bootstrap-project` - Should be run first
-- `setup-pre-commit` - Implements practices from ADR-0002
+- `setup-git-hooks` - Implements practices from ADR-0002
 - `setup-architecture-as-code` - Implements architecture-as-code from ADR-0002

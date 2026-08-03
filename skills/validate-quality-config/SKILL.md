@@ -1,9 +1,9 @@
 ---
 name: validate-quality-config
-description: Validate consistency across quality configuration files. Use after setup-pre-commit, when debugging "works locally, fails in CI" issues, before major releases, or when onboarding.
+description: Validate consistency across quality configuration files. Use after setup-git-hooks, when debugging "works locally, fails in CI" issues, before major releases, or when onboarding.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.28"
+  version: "0.1.29"
 license: MIT
 ---
 
@@ -13,7 +13,7 @@ Validate consistency across quality configuration files.
 
 ## When to Use
 
-- After running `setup-pre-commit` skill
+- After running `setup-git-hooks` skill
 - When debugging "works locally, fails in CI" issues
 - Before major releases or audits
 - When onboarding to understand quality setup
@@ -50,7 +50,7 @@ the one assertion in this skill that checks a difference rather than a match.
 
 ## Required Inputs
 
-- A project that already has quality configuration in place (run `setup-pre-commit` first)
+- A project that already has quality configuration in place (run `setup-git-hooks` first)
 - `docs/reference/quality-configuration.md` as the single source of truth for canonical values
 - Read access to the config files being cross-checked (`.editorconfig`, linter configs such as `.credo.exs` / `ruff.toml` / `.prettierrc`, `.pre-commit-config.yaml`, and the CI workflow files under `.github/workflows/` or `.gitlab-ci.yml`)
 
@@ -64,7 +64,7 @@ if [ -f docs/reference/quality-configuration.md ]; then
     echo "✓ quality-configuration.md exists"
 else
     echo "✗ Missing docs/reference/quality-configuration.md"
-    echo "  Run: quality/setup-pre-commit skill first"
+    echo "  Run: quality/setup-git-hooks skill first"
     exit 1
 fi
 ```
@@ -389,7 +389,7 @@ The skill has done its job when:
 
 ## Related Skills
 
-- `setup-pre-commit` - Creates the configs this validates
+- `setup-git-hooks` - Creates the configs this validates
 - `setup-adrs` - Documents quality practices in an ADR
 
 > **Pattern Reference**: See [CONSISTENT-QUALITY-GATES](https://github.com/jrjsmrtn/ai-assisted-project-orchestration/blob/develop/docs/patterns/quality/consistent-quality-gates.md)

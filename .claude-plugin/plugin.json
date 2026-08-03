@@ -1,6 +1,6 @@
 {
   "name": "project-orchestration-skills",
-  "version": "0.1.28",
+  "version": "0.1.29",
   "description": "Skills for AI-assisted project orchestration following best practices for software development lifecycle, architecture documentation, and quality automation",
   "author": {
     "name": "Georges Martin",
@@ -15,9 +15,10 @@
     "adr",
     "c4-model",
     "quality",
-    "pre-commit",
+    "git-hooks",
     "work-organization",
     "gitlab-ci",
-    "supply-chain"
+    "supply-chain",
+    "lefthook"
   ]
 }
