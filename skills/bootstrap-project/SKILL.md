@@ -218,6 +218,40 @@ is the highest-value content in any commit and the first thing omitted under tim
 conventions, but nothing in this practice set has been damaged by ignoring them, and every unenforced
 rule dilutes the ones that matter.
 
+#### Code comment content
+
+Same principle as commit bodies, different surface: **the code shows what, a comment is only worth
+its maintenance if it carries why.**
+
+**The test: would deleting this comment let someone reintroduce a bug, or repeat an approach already
+rejected?** If yes, it earns its place permanently. If no, it is a second copy of the code that
+drifts out of sync and is believed anyway — which is worse than absence, because a wrong comment is
+trusted while missing code is read.
+
+**Write these:**
+
+- **Order or shape that looks arbitrary and is not.** *"ORDER MATTERS — testing `/modules/` first
+  labels a worktree-of-a-submodule as a submodule, hiding that it shares history with another entry."*
+  Without it, the next reader tidies the branches into a "cleaner" order and silently restores the
+  bug.
+- **The alternative you rejected, and why.** Prevents the change being "simplified" back.
+- **Why a check is shaped the way it is** — what it measures and what it deliberately does not. A
+  check whose reasoning is undocumented gets relaxed the first time it is inconvenient.
+- **A fact verified against an external source** — with the date. *"Verified against cosign 3.1.1,
+  2026-08-04."* Undated, it is unfalsifiable and will be trusted forever.
+
+**Do not write these:**
+
+- **Restatements of the code.** `i++  // increment i`, or a docstring repeating the signature.
+- **Commented-out code.** Git already has it, with authorship and a reason. Commented-out code has
+  neither and is never deleted, because nobody knows if it is load-bearing.
+- **Anything a type, a name or a test states better.** A comment explaining what a badly-named
+  variable holds is a rename waiting to happen.
+
+**Comments that make a claim carry the same obligation as commit messages: they must not claim more
+than the code does.** A comment saying a function validates X, where it does not, is a defect that
+no test catches and every reader inherits.
+
 ### Phase 3: Create CLAUDE.md
 
 Generate a project-specific CLAUDE.md with:
@@ -381,6 +415,10 @@ The roadmap is a living document — update it as phases complete and new ones e
 
 ### Phase 6: Create README.md
 
+A README is the **front door**, not documentation. Its job is to let a reader answer three questions
+in under a minute: *what is this, is it for me, how do I start?* Under Diátaxis it is none of the
+four modes — it **routes** to them.
+
 Generate a README.md with:
 - Project name and description
 - Installation instructions (placeholder)
@@ -388,6 +426,39 @@ Generate a README.md with:
 - Documentation links
 - License
 - Contributing guidelines reference
+
+**The rule that matters most: a README MUST NOT assert a number a command can derive.**
+
+Counts, tallies and status lines are the fastest-decaying content in any repository, and nothing
+validates them. A bundle README read *"Status: skeleton. One verified record"* while the bundle held
+fifteen — the sentence was true when written, nothing objected, and it stayed wrong for as long as
+nobody looked. **Point at the command instead**:
+
+```markdown
+Run `okf list knowledge` for what is actually in here. This file deliberately quotes no
+count — a hand-written total is the kind of claim that goes stale silently.
+```
+
+The same applies to version numbers, supported-platform lists, dependency counts and "N of M
+complete" progress. If a generator can derive it, the README should invoke the generator or say
+nothing.
+
+**Say what the project is *not*.** The cheapest paragraph in any README, and the one that saves the
+most reader time — scope boundaries, adjacent things it is confused with, and where those live
+instead. A reader who bounces in ten seconds because you told them it is not what they want is a
+success, not a loss.
+
+**Tier the rest:**
+
+| Tier | README carries |
+|---|---|
+| **t0** | what it is, how to run it, one working example |
+| **t1** | + what it is *not*; + status stated as a **date or a link**, never a count |
+| **t2** | + install, contributing, licence, security-reporting pointers |
+
+**Every command in a README is a claim.** Run them, in a clean checkout, before committing —
+install instructions rot faster than prose and fail in front of exactly the audience you were trying
+to reach.
 
 ### Phase 7: Seed Traced Artifacts (if Audience Registry exists)
 
