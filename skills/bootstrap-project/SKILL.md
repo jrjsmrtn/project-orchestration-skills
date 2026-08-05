@@ -252,6 +252,20 @@ trusted while missing code is read.
 than the code does.** A comment saying a function validates X, where it does not, is a defect that
 no test catches and every reader inherits.
 
+##### Where these rules come from
+
+**House-derived, from observed failures in this portfolio — not from published guidance, and no
+external source is cited here because none was consulted.** The rules are kept because each traces
+to a concrete case, but the evidence is one portfolio and one author, which is narrower than the
+confident phrasing above might suggest.
+
+**Further reading, deliberately not cited as support** because it has not been checked against these
+rules: Ousterhout's *A Philosophy of Software Design* treats comments at length and argues they
+should capture what is not obvious from the code; Naur's *Programming as Theory Building* is the
+older argument for why that knowledge cannot be recovered from the artifact; Martin's *Clean Code*
+takes a markedly more hostile view of comments and is worth reading as the opposing case. **If any
+of these contradicts a rule above, the source wins and this section should change.**
+
 ### Phase 3: Create CLAUDE.md
 
 Generate a project-specific CLAUDE.md with:
@@ -416,8 +430,11 @@ The roadmap is a living document — update it as phases complete and new ones e
 ### Phase 6: Create README.md
 
 A README is the **front door**, not documentation. Its job is to let a reader answer three questions
-in under a minute: *what is this, is it for me, how do I start?* Under Diátaxis it is none of the
-four modes — it **routes** to them.
+in under a minute: *what is this, is it for me, how do I start?*
+
+> **Diátaxis does not address READMEs** (checked 2026-08-05 — the framework describes four modes and
+> says nothing about where a README sits). Treating it as a router *into* those modes rather than as
+> one of them is an inference from this portfolio's practice, not a claim the framework makes.
 
 Generate a README.md with:
 - Project name and description
@@ -459,6 +476,33 @@ success, not a loss.
 **Every command in a README is a claim.** Run them, in a clean checkout, before committing —
 install instructions rot faster than prose and fail in front of exactly the audience you were trying
 to reach.
+
+##### Where these rules come from
+
+**The derive-don't-assert rule is house-derived**, from an observed failure in this portfolio rather
+than from published guidance. No external source below states it. It is kept because the failure was
+real and recurred, but it should be read as local evidence, not established practice.
+
+**Established references, for the structure this section does not cover:**
+
+- **[Standard Readme](https://github.com/RichardLitt/standard-readme/blob/main/spec.md)** — a
+  genuine specification: required sections and their order (Title, Short Description, TOC, Install,
+  Usage, Contributing, License-last), a **120-character** short description that must match the
+  repository and package-manager description, and a rule against broken links. Use it when you want
+  a checkable structure; it is silent on staleness.
+  - Its matching-description rule is the same instinct as derive-don't-assert — **one source of
+    truth, restated nowhere** — arrived at from a different direction.
+- **[Make a README](https://www.makeareadme.com/)** — section suggestions (Name, Description,
+  Badges, Visuals, Installation, Usage, Support, Roadmap, Contributing, Authors, License, Project
+  status) and the one piece of staleness guidance either source offers: *"If you have run out of
+  energy or time for your project, put a note at the top of the README saying that development has
+  slowed down or stopped completely."*
+
+**A tension worth stating rather than hiding**: Make a README holds that *"while a README can be too
+long and detailed, too long is better than too short"*, which pulls against the tiering above. Both
+positions are defensible — the tiering optimises for a reader deciding in under a minute, that
+guidance optimises for a reader who has already decided. Choose per project rather than assuming
+this skill settled it.
 
 ### Phase 7: Seed Traced Artifacts (if Audience Registry exists)
 
