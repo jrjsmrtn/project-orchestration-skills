@@ -8,6 +8,44 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.32] - 2026-08-05
+
+**The comment rules were checked against a source, and the source won on three counts.** 0.1.31
+shipped them marked house-derived with a standing instruction that a contradicting source wins. One
+was read — [A Philosophy of Software Design vs Clean Code](https://github.com/johnousterhout/aposd-vs-clean-code/blob/main/README.md),
+a recorded exchange between **John Ousterhout** and **Robert C. Martin**, published by Ousterhout —
+and it contradicted three.
+
+### Fixed
+
+- **A whole category was missing.** The section covered only *implementation* comments without
+  saying so. Ousterhout's **first** reason for comments is **abstraction**: *"without comments there
+  is no way to have abstraction or modularity… It should be possible to use a method without reading
+  its code. The way we achieve this is by writing a header comment that describes the method's
+  interface."* The original test — *would deleting this let someone reintroduce a bug* — would have
+  deleted interface documentation wholesale, since an interface comment prevents **misuse** rather
+  than a specific bug
+- **"The code shows what, comments carry why" is too narrow.** The rule is *not obvious from the
+  code*, which includes non-obvious **what** — an algorithm's mechanism can need explaining even
+  when nobody asks why it exists. The why-not-what phrasing is the popular formulation, not the
+  precise one
+- **The disagreement is now shown rather than settled silently.** *Clean Code* holds comments are
+  *"always failures"*; Ousterhout calls that stigmatising and predicts juniors will read it as "write
+  no comments"; Martin replies he is hostile to *gratuitous* comments rather than to comments. They
+  close: *"we struggled to find areas of agreement on this topic."* Ousterhout would write **5–10×
+  more comment lines** than Martin for the same code
+  - Where they **agree** is marked settled — *implementation comments only when the code is
+    nonobvious* — which was the one original rule the sources support outright
+  - Where they disagree, the instruction is to choose per project **and say which you chose**. This
+    section now sits **nearer Martin on implementation, nearer Ousterhout on interfaces**, stated as
+    a position rather than inherited
+
+### Notes
+
+**Still unread, recorded as such**: the book itself (not obtainable here — the extract PDF is
+image-only) and Naur's *Programming as Theory Building*. The standing instruction holds: a
+contradicting source wins.
+
 ## [0.1.31] - 2026-08-05
 
 **Content conventions for the three artifacts Conventional Commits does not reach.** The spec
