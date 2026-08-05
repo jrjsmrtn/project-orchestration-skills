@@ -222,7 +222,7 @@ second is usually cheaper and answerable **before any code is written**.
 Confirm each, before building — read `CONTRIBUTING`, the DCO/CLA, and a few recent merged PRs:
 
 - **Contribution agreement** — DCO (`Signed-off-by`, retroactive-fixable) vs a **CLA** (may be a hard stop for some contributors or employers). Which, and can you sign it?
-- **AI-contribution policy** — some projects restrict, ban, or require *disclosure* of AI-generated contributions. Against a project that bans them, unaware work is wasted **entirely**; disclosure is cheap only if known up front.
+- **AI-contribution policy** — some projects restrict, ban, or require *disclosure* of AI-generated contributions. Against a project that bans them, unaware work is wasted **entirely**; disclosure is cheap only if known up front. See *Finding the AI-contribution policy* below — `CONTRIBUTING` is the wrong place to stop looking.
 - **Inbound licence compatibility** — your contribution must be licensable under *their* terms. This is the **opposite direction** from the `Dependencies` check (you consuming their licence) and is easy to conflate.
 - **Governance & responsiveness** — who decides, how long merges take, whether the maintainer is active. A technically-welcome contribution can still stall for months.
 
@@ -235,7 +235,47 @@ Confirm each, before building — read `CONTRIBUTING`, the DCO/CLA, and a few re
 
 **Why Upstream Acceptance is its own subsection**: `Dependencies` models what the project *consumes* and needs to stay *available*; Upstream Acceptance models what the project must *satisfy* to be *accepted* — a different failure mode. Grounding (a real case): a project whose distribution strategy rested on contributing a cataloger to an upstream analysed thoroughly whether the upstream would *want* it, but never what it *required of a contributor* — DCO sign-off, and an (absent, that time) AI-contribution policy, were discovered only after the code was written and the PR opened. Benign there; against a project that bans AI contributions the whole effort would have been wasted, and surfaced at submission rather than at decision time.
 
-**AI Assistance**: Use web search and Explore agents to research existing solutions, competitors, and technology options — and, for any Upstream Acceptance row, to read the upstream's `CONTRIBUTING`, DCO/CLA, and AI-contribution policy before work starts.
+#### Finding the AI-contribution policy
+
+Reading `CONTRIBUTING` is where this check usually stops, and it is not where the policy usually
+lives. Across projects that have written one, it has been found in **five** different places:
+
+| Where | Seen in |
+|---|---|
+| A dedicated policy page or in-tree process doc | Linux kernel (`Documentation/process/coding-assistants.rst`), QEMU (`code-provenance`) |
+| The **Code of Conduct** | Zig — placement matters: a violation is *misconduct*, not a rejected patch |
+| The contribution guide's own AI section | Git (`SubmittingPatches`), Ansible, Python devguide |
+| The **security / reporting** page | curl — disclosure is mandatory for AI-found vulnerabilities |
+| The project's **foundation** | Linux Foundation, Apache, OpenInfra — these are *floors*; the project may be stricter |
+
+Check the foundation **as well as** the project, never instead of it. A permissive foundation
+baseline says nothing about a project that has written its own rule, and the more active the
+project, the likelier it has.
+
+**Ask the shape, not the verdict.** "Banned or allowed?" is the wrong question and produces wrong
+answers — most restrictive policies carry a route, and the route is the operative part:
+
+- **Is there a permitted path, and who decides?** Bans are frequently conditional — a named approver,
+  a documented exceptions process, a pre-arranged reviewer.
+- **Is disclosure required, encouraged, or unwanted?** And **above what threshold** — any assistance,
+  or unmodified bulk?
+- **In what format?** `Assisted-by:` and `Generated-by:` are both in use and are *not* synonyms —
+  one names predictive assistance, the other generative authorship, and value grammars differ
+  between projects that share a field name. Copy the target project's spelling; do not assume.
+- **Does it cover prose and conversation, or only code?** Several policies govern issue comments,
+  PR descriptions and forum posts, not just patches.
+- **Can you explain every line under review?** This is the one test nearly every policy applies,
+  however it is worded, and it is failable with no AI involved.
+
+**An absent policy is not permission.** It may mean a policy is in progress, or a vote is live, and
+work submitted now can be judged under a rule adopted next month. When nothing is published,
+disclose voluntarily and ask on the project's list — that is safe under every outcome.
+
+**Do not rely on a summary of someone else's policy**, including a summary in this skill. Compression
+reliably drops the qualifier that decides what you must do. Read the project's own page, and record
+the date you read it — these change without announcement.
+
+**AI Assistance**: Use web search and Explore agents to research existing solutions, competitors, and technology options — and, for any Upstream Acceptance row, to read the upstream's `CONTRIBUTING`, DCO/CLA, and AI-contribution policy before work starts, checking each of the five locations above.
 
 ### Phase 4: Risk Assessment
 
