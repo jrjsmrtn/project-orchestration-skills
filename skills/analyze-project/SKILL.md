@@ -221,7 +221,10 @@ second is usually cheaper and answerable **before any code is written**.
 
 Confirm each, before building — read `CONTRIBUTING`, the DCO/CLA, and a few recent merged PRs:
 
-- **Contribution agreement** — DCO (`Signed-off-by`, retroactive-fixable) vs a **CLA** (may be a hard stop for some contributors or employers). Which, and can you sign it?
+- **Contribution agreement** — DCO (`Signed-off-by`, retroactive-fixable) vs a **CLA**. Which, and can you sign it?
+  - A DCO problem is fixable in minutes by amending a commit. **A CLA problem may not be yours to fix**: the standard employer clause (ICLA §4) requires you to represent that your employer has waived rights to your contributions, or has itself executed a Corporate CLA. If your employer has rights to what you create, that is *their* signature to obtain — weeks, if it happens. Start it before writing code, not before opening the PR.
+  - A Corporate CLA does not remove the need for each developer's individual one.
+  - CLAs differ per steward: some license, some assign, some take relicensing rights. **Read the specific agreement** — the category name tells you nothing about the terms.
 - **AI-contribution policy** — some projects restrict, ban, or require *disclosure* of AI-generated contributions. Against a project that bans them, unaware work is wasted **entirely**; disclosure is cheap only if known up front. See *Finding the AI-contribution policy* below — `CONTRIBUTING` is the wrong place to stop looking.
 - **Inbound licence compatibility** — your contribution must be licensable under *their* terms. This is the **opposite direction** from the `Dependencies` check (you consuming their licence) and is easy to conflate.
 - **Governance & responsiveness** — who decides, how long merges take, whether the maintainer is active. A technically-welcome contribution can still stall for months.
@@ -262,6 +265,11 @@ answers — most restrictive policies carry a route, and the route is the operat
 - **In what format?** `Assisted-by:` and `Generated-by:` are both in use and are *not* synonyms —
   one names predictive assistance, the other generative authorship, and value grammars differ
   between projects that share a field name. Copy the target project's spelling; do not assume.
+  **Do not reach for `Co-developed-by:`** — widely recommended for AI attribution before project
+  policies landed, and structurally invalid for a tool: it denotes *authorship*, so the Linux kernel
+  requires each one be immediately followed by a `Signed-off-by:` from that co-author — which the
+  same project forbids an AI agent from adding. The trailer would demand a sign-off no tool may
+  give.
 - **Does it cover prose and conversation, or only code?** Several policies govern issue comments,
   PR descriptions and forum posts, not just patches.
 - **Can you explain every line under review?** This is the one test nearly every policy applies,
