@@ -8,6 +8,50 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.31] - 2026-08-05
+
+**Content conventions for the three artifacts Conventional Commits does not reach.** The spec
+governs commit *grammar* — `type(scope)!: description`, footers as git trailers — and its Rule 7
+makes the body *"free-form"*. That is a vacuum, and `bootstrap-project` cited the spec without
+filling it.
+
+### Added
+
+- **Commit message content rules**, tier-scaled so a solo t0 project is not handed a five-rule
+  policy. Subject says what changed, body says *why* or there is no body; **a message must not claim
+  more than the commit contains**; and record what cannot be recovered from the tree
+  - Rule 2 leads because a wrong message is worse than a thin one — a thin message is unhelpful, a
+    wrong one is a false record in the exact place people look when the code stops explaining itself.
+    **The risk is highest when the message is generated**, since fluent prose about an intended
+    change reads identically whether or not the change landed
+- **`setup-git-hooks`: a `commit-msg` check** for the mechanical half — fails when the message names
+  a **backticked** path that exists but is not staged. Scoped narrowly to keep false positives near
+  zero, shipped with its planted-bad self-test, and explicit about what it does *not* catch
+- **Code comment content rules.** One test rather than a style list: *would deleting this comment let
+  someone reintroduce a bug, or repeat an approach already rejected?* A wrong comment is worse than a
+  missing one, because it is trusted while absent code is read
+- **README content rules.** The one that matters: **a README must not assert a number a command can
+  derive.** A bundle README read *"Status: skeleton. One verified record"* while the bundle held
+  fifteen — true when written, unvalidated, wrong for as long as nobody looked
+
+### Fixed
+
+- **A misattribution to Diátaxis.** The README section claimed *"under Diátaxis it is none of the
+  four modes"*. **Diátaxis says nothing about READMEs at all** (checked 2026-08-05). The router
+  framing is an inference from this portfolio's practice and is now labelled as one
+- **Missing provenance on both new sections.** Each shipped as established practice while grounded
+  entirely in one portfolio, one author, one day
+  - README gains real references — [Standard Readme](https://github.com/RichardLitt/standard-readme/blob/main/spec.md)
+    (required sections, 120-character description matching the repo and package-manager fields) and
+    [Make a README](https://www.makeareadme.com/). Standard Readme's matching-description rule is the
+    same *one source of truth, restated nowhere* instinct as derive-don't-assert, reached
+    independently
+  - A tension is stated rather than hidden: Make a README holds *"too long is better than too
+    short"*, which pulls against the tiering here
+  - Code comments are marked **house-derived in full**, with Ousterhout, Naur and Martin named as
+    further reading and **explicitly not as support** — and a standing instruction that if any of
+    them contradicts a rule, the source wins
+
 ## [0.1.30] - 2026-08-05
 
 ### Changed
