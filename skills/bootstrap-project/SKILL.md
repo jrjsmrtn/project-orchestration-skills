@@ -220,13 +220,34 @@ rule dilutes the ones that matter.
 
 #### Code comment content
 
-Same principle as commit bodies, different surface: **the code shows what, a comment is only worth
-its maintenance if it carries why.**
+Comments serve **two distinct jobs**, and conflating them is why most comment advice reads as
+contradictory. Ousterhout's formulation, from his published comparison with *Clean
+Code*:[^aposd-vs-cc]
 
-**The test: would deleting this comment let someone reintroduce a bug, or repeat an approach already
-rejected?** If yes, it earns its place permanently. If no, it is a second copy of the code that
-drifts out of sync and is believed anyway — which is worse than absence, because a wrong comment is
-trusted while missing code is read.
+1. **Abstraction.** *"Without comments there is no way to have abstraction or modularity… It should
+  be possible to use a method without reading its code. The way we achieve this is by writing a
+  header comment that describes the method's interface."*
+2. **Information not obvious from the code.**
+
+**Write interface comments so callers need not read the implementation.** This is the job most
+in-house comment rules omit — including an earlier version of this section — because it is not about
+explaining tricky code. It is what makes a module usable without opening it, and no naming scheme
+substitutes for it.
+
+For **implementation** comments, the bar is different and much higher. Both Ousterhout and Martin
+agree here, which is worth knowing given how little else they agree on: *"implementation code only
+needs comments when the code is nonobvious."*[^aposd-vs-cc]
+
+**The test for an implementation comment: would deleting it let someone reintroduce a bug, or repeat
+an approach already rejected?** If yes it earns its place permanently. If no, it is a second copy of
+the code that drifts out of sync and is believed anyway — worse than absence, because a wrong comment
+is trusted while missing code is read.
+
+> **Note the scope.** That test governs implementation comments only. Applying it to interface
+> comments would delete most of them, since an interface comment usually prevents *misuse* rather
+> than a specific bug. Ousterhout would write **"5-10x more lines of comments"** than Martin for the
+> same code; this section sits nearer Martin on implementation and nearer Ousterhout on
+> interfaces.[^aposd-vs-cc]
 
 **Write these:**
 
@@ -252,19 +273,37 @@ trusted while missing code is read.
 than the code does.** A comment saying a function validates X, where it does not, is a defect that
 no test catches and every reader inherits.
 
-##### Where these rules come from
+##### Where these rules come from, and what checking them changed
 
-**House-derived, from observed failures in this portfolio — not from published guidance, and no
-external source is cited here because none was consulted.** The rules are kept because each traces
-to a concrete case, but the evidence is one portfolio and one author, which is narrower than the
-confident phrasing above might suggest.
+The "do not write" list and the implementation test are **house-derived**, from observed failures in
+this portfolio. They were then checked against
+[**A Philosophy of Software Design vs Clean Code**](https://github.com/johnousterhout/aposd-vs-clean-code/blob/main/README.md)[^aposd-vs-cc]
+— a long recorded exchange between **John Ousterhout** and **Robert C. Martin**, published by
+Ousterhout, in which the two work through their disagreement directly. **Three things changed as a
+result**, recorded here because the earlier version stated them wrongly:
 
-**Further reading, deliberately not cited as support** because it has not been checked against these
-rules: Ousterhout's *A Philosophy of Software Design* treats comments at length and argues they
-should capture what is not obvious from the code; Naur's *Programming as Theory Building* is the
-older argument for why that knowledge cannot be recovered from the artifact; Martin's *Clean Code*
-takes a markedly more hostile view of comments and is worth reading as the opposing case. **If any
-of these contradicts a rule above, the source wins and this section should change.**
+- **A whole category was missing.** The section covered only implementation comments and did not say
+  so. Ousterhout's *first* reason for comments is abstraction — interface documentation — which the
+  original test would have deleted wholesale.
+- **"The code shows what, comments carry why" is too narrow.** The rule is *not obvious from the
+  code*, which includes non-obvious **what**: an algorithm's mechanism can need explaining even when
+  nobody asks why it exists.
+- **The disagreement is real and unresolved, so it is shown rather than settled.** *Clean Code* holds
+  that *"comments are always failures… compensate for our failure to express ourselves in code"*;
+  Ousterhout calls that stigmatising and warns juniors will read it as "write no comments". Martin's
+  reply is that he is *"not hostile to comments in general. I **am** very hostile to gratuitous
+  comments."* They close with: *"we struggled to find areas of agreement on this topic."*
+
+**Where they do agree, treat it as settled**: implementation comments only when the code is
+nonobvious, and gratuitous comments are a cost. Where they disagree — interface comments for internal
+APIs, comments versus very long method names, whether to trust a comment without reading the code —
+**pick per project and say which you picked**, rather than inheriting one camp silently.
+
+**Still unread**: the book itself (not obtainable here — the extract PDF is image-only and the
+volume is not in this library), and Naur's *Programming as Theory Building*. The standing
+instruction holds: if a source contradicts a rule above, the source wins.
+
+[^aposd-vs-cc]: [A Philosophy of Software Design vs Clean Code](https://github.com/johnousterhout/aposd-vs-clean-code/blob/main/README.md) — John Ousterhout and Robert C. Martin, read 2026-08-05.
 
 ### Phase 3: Create CLAUDE.md
 
