@@ -275,6 +275,14 @@ disclose voluntarily and ask on the project's list — that is safe under every 
 reliably drops the qualifier that decides what you must do. Read the project's own page, and record
 the date you read it — these change without announcement.
 
+**Sourced records for specific organisations** — what each policy says, quoted from its own text,
+with who verified it and when — are in
+[`ai-contribution-policies`](https://github.com/jrjsmrtn/ai-contribution-policies), whose
+[overview](https://github.com/jrjsmrtn/ai-contribution-policies/blob/main/knowledge/overview.md) is
+the map the guidance above condenses. It is **curated, not exhaustive**, and carries per-record
+expiry: a record past its `stale_after` is a prompt to re-read the source, not an answer. Use it to
+know *what to look for*; confirm against the project's own page before deciding.
+
 **AI Assistance**: Use web search and Explore agents to research existing solutions, competitors, and technology options — and, for any Upstream Acceptance row, to read the upstream's `CONTRIBUTING`, DCO/CLA, and AI-contribution policy before work starts, checking each of the five locations above.
 
 ### Phase 4: Risk Assessment
