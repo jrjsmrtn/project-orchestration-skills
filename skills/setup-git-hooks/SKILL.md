@@ -337,6 +337,70 @@ reuse:
 - uses: fsfe/reuse-action@<sha>   # v5
 ```
 
+#### Commit message honesty (t2)
+
+Enforces the mechanical half of `bootstrap-project`'s Rule 2 — *a commit message must not claim more
+than the commit contains*.
+
+**The failure it catches**: an edit silently does nothing (a pattern that did not match, a file
+already in the target state) while the message, written beforehand, describes it confidently. The
+message is then a false record in `git log`, which is exactly where people look when the code no
+longer explains itself. The risk is highest when the message is **generated**, because fluent prose
+about an intended change reads identically whether or not the change landed.
+
+**The rule, narrowly scoped to stay honest**: a path in backticks that **exists in the working tree
+but is not staged** fails the commit. Backticks mean "I am naming this file"; prose references and
+non-existent paths are ignored, which keeps false positives near zero.
+
+`.githooks/commit-msg` — no framework needed, and deliberately dependency-free:
+
+```bash
+#!/usr/bin/env bash
+# Fail when the message names a file in backticks that exists but is not staged.
+set -uo pipefail
+msg_file="$1"
+staged="$(git diff --cached --name-only)"
+
+# Backticked tokens that look like repo-relative paths.
+mentioned="$(grep -oE '`[A-Za-z0-9._/-]+`' "$msg_file" 2>/dev/null \
+             | tr -d '`' | grep -E '/' | sort -u || true)"
+
+unstaged=""
+while IFS= read -r pathname; do
+    [ -n "$pathname" ] || continue
+    [ -e "$pathname" ] || continue                      # not a real path: prose, ignore
+    grep -qxF "$pathname" <<<"$staged" && continue      # staged: fine
+    unstaged="${unstaged}${pathname}"$'\n'
+done <<<"$mentioned"
+
+if [ -n "$unstaged" ]; then
+    echo "✗ commit message names files it does not change:" >&2
+    printf '    %s\n' $unstaged >&2
+    echo "  Stage them, or drop the backticks if you are only referring to them." >&2
+    exit 1
+fi
+```
+
+Install with `git config core.hooksPath .githooks` (or wire it as lefthook's `commit-msg`).
+
+**Prove it fails before trusting it.** A check that has only ever passed is unproven:
+
+```bash
+# Planted bad: name a real, unstaged file in backticks.
+other=$(git ls-files | grep -v "$(git diff --cached --name-only | head -1)" | head -1)
+printf 'chore: test\n\nTouches `%s`.\n' "$other" > /tmp/m
+.githooks/commit-msg /tmp/m; echo "exit=$?   # must be 1"
+
+# Planted good: same message, prose instead of backticks.
+printf 'chore: test\n\nTouches %s.\n' "$other" > /tmp/m
+.githooks/commit-msg /tmp/m; echo "exit=$?   # must be 0"
+```
+
+**What it does not catch**, stated so its silence is not read as approval: a message that overclaims
+without naming a path — *"fixed both call sites"* when one edit no-op'd. No hook catches that. The
+practice is to re-read the message against `git diff --cached` rather than against your intent, and
+the hook only removes the most mechanical slice of the problem.
+
 #### Lefthook — Elixir Configuration
 
 ```yaml

@@ -163,6 +163,61 @@ features/               # or test/features/ depending on ecosystem
    > `main` the default and treat `develop` as a long-lived branch. Decide deliberately — see
    > `harden-github-actions` Step 6.
 
+#### Commit message content
+
+[Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specifies the **grammar** —
+`type(scope)!: description`, uppercase `BREAKING CHANGE`, a blank line before the body, footers as
+git trailers. Its Rule 7 makes the body *"free-form"*, and that is a vacuum rather than an
+endorsement. These rules fill it.
+
+**Scale them by tier.** Loading a solo t0 project with a five-rule commit policy is how conventions
+get ignored wholesale.
+
+| Tier | Applies |
+|---|---|
+| **t0** | Rule 1 — subject discipline |
+| **t1** | + Rules 2 and 3 |
+| **t2** | + Rule 2 wired as a hook (`setup-git-hooks`), + trailer grammar stated |
+
+**1. The subject says what changed. The body says why — or there is no body.**
+The diff already shows what. A body restating the subject in longer words is worse than none,
+because it looks like rationale and is not. *Test: delete the body. If nothing is lost, it should not
+have been there.*
+
+**2. A commit message MUST NOT claim more than the commit contains.**
+The sharpest rule, because a wrong message is worse than a thin one: a thin message is merely
+unhelpful, a wrong one is a false record that outlives everyone who could correct it, and `git log`
+is where people go precisely when the code no longer explains itself.
+
+This failure is easy to commit and hard to notice. An edit silently does nothing — a pattern that
+did not match, a file already in the target state — while the message, written beforehand, describes
+it confidently. **The risk is highest when the message is generated**, since fluent prose about an
+intended change reads identically whether or not the change landed.
+
+> Before committing, re-read the message against `git diff --cached` and not against your intent.
+
+`setup-git-hooks` can enforce the mechanical half — see *Commit message honesty* there.
+
+**3. Record what would otherwise be lost.**
+Why this approach rather than the one you rejected; what you tried that failed; what constraint
+forced the shape. Not the diff in prose — the reasoning that cannot be recovered from the tree. This
+is the highest-value content in any commit and the first thing omitted under time pressure.
+
+**Two supporting rules**
+
+- **Corrections belong in the message of the commit that fixes them**, naming *what the old state
+  would have misled someone into believing*. A CHANGELOG entry reaches readers; a commit message
+  reaches whoever runs `git blame` in two years, which is a different and usually more desperate
+  person.
+- **Trailers are structured metadata, not decoration.** Git standardises the *shape* of a trailer
+  block and nothing about which tokens mean what, so any project using `Assisted-by:`,
+  `Co-authored-by:` or similar must state its own grammar. Pick one spelling and stay with it —
+  a trailer emitted in a format the project never defined parses as prose.
+
+**What is deliberately not here**: line-wrap width, capitalisation, imperative mood. Real
+conventions, but nothing in this practice set has been damaged by ignoring them, and every unenforced
+rule dilutes the ones that matter.
+
 ### Phase 3: Create CLAUDE.md
 
 Generate a project-specific CLAUDE.md with:
@@ -186,7 +241,7 @@ Generate a project-specific CLAUDE.md with:
 Current tier: **[t0 | t1 | t2]**
 
 Tier-specific artifacts in this project:
-- [list per current tier — e.g., "CLAUDE.md, conventional commits" at t0]
+- [list per current tier — e.g., "CLAUDE.md, conventional commits (grammar + content rules by tier)" at t0]
 
 Promotion triggers being watched:
 - [e.g., "t0 → t1 when first contributor joins" or "t1 → t2 when nearing v1.0"]
