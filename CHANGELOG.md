@@ -8,6 +8,41 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.30] - 2026-08-05
+
+### Changed
+
+- **`analyze-project`: the AI-contribution-policy check is now findable and shaped.** It said "read
+  `CONTRIBUTING`", which is where the check usually stops and not where the policy usually lives.
+  Reading fifteen projects' actual policies found it in **five** places: a dedicated policy or
+  in-tree process doc (Linux kernel, QEMU), the **Code of Conduct** (Zig — where a violation is
+  *misconduct*, not a rejected patch), the contribution guide's own AI section (Git, Ansible,
+  Python), the **security page** (curl, where disclosure is mandatory for AI-found vulnerabilities),
+  and the project's **foundation** (Linux Foundation, Apache, OpenInfra — which are *floors* a
+  project may exceed, so checking only the foundation is a reliable way to be wrong about the
+  project)
+- **It now asks for the shape, not the verdict.** "Banned or allowed?" produces wrong answers: most
+  restrictive policies carry a route, and the route is the operative part. Gentoo's ban is
+  revisitable, NetBSD's is a rebuttable presumption with a named approver, QEMU runs a documented
+  exceptions process, Rust's draft requires a pre-arranged reviewer — all filed as "complete ban" by
+  the summary this replaced
+- **The CLA warning names its mechanism.** Previously "may be a hard stop for some contributors or
+  employers"; now **ICLA §4**, the employer representation — and the operational conclusion that
+  follows, which is to start it *before writing code*. A DCO problem is fixable by amending a
+  commit; a §4 problem may not be yours to fix at all, since it needs your employer's signature
+
+### Added
+
+- **A warning against `Co-developed-by:` for AI attribution.** Widely recommended before project
+  policies landed, and structurally invalid for a tool: it denotes *authorship*, so the Linux kernel
+  requires each one be immediately followed by a `Signed-off-by:` from that co-author — which the
+  same project's policy forbids an AI agent from adding. The trailer demands a sign-off no tool may
+  give
+- **A citation to [`ai-contribution-policies`](https://github.com/jrjsmrtn/ai-contribution-policies)**
+  — sourced per-organisation records with per-record expiry, published 2026-08-05. Framed as *what to
+  look for*, not as an answer: the bundle is curated rather than exhaustive, and a record past its
+  `stale_after` is a prompt to re-read the source
+
 ## [0.1.29] - 2026-08-03
 
 ### Changed
