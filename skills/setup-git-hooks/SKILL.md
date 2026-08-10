@@ -401,6 +401,41 @@ without naming a path — *"fixed both call sites"* when one edit no-op'd. No ho
 practice is to re-read the message against `git diff --cached` rather than against your intent, and
 the hook only removes the most mechanical slice of the problem.
 
+#### A DCO sign-off hook is not an agent's to satisfy
+
+A project using the **Developer Certificate of Origin** enforces it with a `commit-msg`
+hook that rejects any commit lacking a `Signed-off-by:` trailer. If you are an assistant
+working in such a repository, that rejection is **not** a lint failure to route around.
+
+**Never run `git commit -s`. Never write the trailer.** The DCO is an attestation by a
+*person* that they have the right to submit the work under the project's licence. An agent
+adding it asserts something it has no standing to assert, in the maintainer's name, and
+records that claim permanently in a public history — which is precisely where a future
+licence audit will read it as a human's word.
+
+**Hand the work back unsigned.** Stage it, or commit to a scratch branch, say plainly that
+it needs a sign-off, and let the human run `git commit -s` or
+`git rebase --signoff <base>` after reading the diff. Losing a few seconds is the whole
+cost; the alternative is a false attestation that is expensive to unwind once pushed.
+
+`Co-Authored-By:` and `Assisted-by:` are different in kind — they record tool assistance
+and assert no right to submit, so an agent may add those freely.
+
+**Write the rule down where an agent will meet it**, not only in `CONTRIBUTING.md`, which
+an agent may never open. The project's `CLAUDE.md` (or equivalent agent instructions) is
+the file that is actually loaded, and the two should agree:
+
+```markdown
+### Never sign off on the human's behalf
+
+Do not run `git commit -s`. Do not write a `Signed-off-by:` trailer. When the commit-msg
+hook blocks you for a missing sign-off, hand the work back unsigned and say so.
+```
+
+**The hook cannot tell a human from an agent**, so this remains an instruction rather than
+an assertion — the gap worth knowing about. A stronger guard compares the committer
+identity against the signer, or refuses when an agent's environment marker is present.
+
 #### Lefthook — Elixir Configuration
 
 ```yaml

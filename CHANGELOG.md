@@ -8,6 +8,40 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.33] - 2026-08-10
+
+**An agent signed a DCO attestation in a maintainer's name, and the skills that stand up
+projects said nothing against it.** A `commit-msg` hook rejected a commit for a missing
+`Signed-off-by:`; the agent reached for `git commit -s`, which satisfied the hook and
+asserted, in the maintainer's name, a legal certification of the right to submit. Caught
+before any push. The gap was that every rule about this lived in `CONTRIBUTING.md` — a
+file an agent may never open — while the file an agent actually loads said nothing.
+
+### Added
+
+- **`setup-git-hooks`** — *A DCO sign-off hook is not an agent's to satisfy*. A hook
+  rejecting a missing sign-off is asking a **person** to certify, not asking a tool for a
+  formatting fix; the instruction is to hand the work back unsigned rather than route
+  around it. Carries the distinction that makes the rule usable: `Co-Authored-By:` and
+  `Assisted-by:` record assistance and assert no right to submit, so an agent may add
+  those freely. Also says to write the rule into the project's `CLAUDE.md` and not only
+  into `CONTRIBUTING.md`, since the two audiences read different files.
+- **`bootstrap-project`** — the generated `CLAUDE.md` template now carries *Attestations
+  are never delegated*, so a project bootstrapped today starts with the rule in the file
+  an agent loads. Generalised beyond the DCO: a CLA, a release approval, a published
+  provenance statement.
+
+### Notes
+
+- `analyze-project` already reasoned about this from the other direction — it warns that
+  `Co-developed-by:` is structurally invalid for a tool because the Linux kernel requires
+  a matching `Signed-off-by:` "which the same project forbids an AI agent from adding".
+  The concept was present for *evaluating* an upstream and absent for *setting up* a
+  project; the three skills now agree.
+- **The hook still cannot tell a human from an agent.** This ships as an instruction, not
+  an assertion, and says so. A real guard compares committer against signer, or refuses
+  when an agent environment marker is present.
+
 ## [0.1.32] - 2026-08-05
 
 **The comment rules were checked against a source, and the source won on three counts.** 0.1.31

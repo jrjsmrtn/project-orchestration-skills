@@ -387,6 +387,14 @@ make validate-architecture
 - **Human leads**: [e.g., architecture decisions, security review]
 - **Collaborative**: [e.g., feature implementation, code review]
 
+**Attestations are never delegated.** Do not run `git commit -s` or write a
+`Signed-off-by:` trailer — if this project adopts the DCO, that trailer is a statement by
+a *person* about their right to submit, and a `commit-msg` hook demanding it is asking a
+human to certify, not asking a tool for a formatting fix. When a hook blocks you for a
+missing sign-off, hand the work back unsigned and say so. The same holds for a CLA, a
+release approval, or a published provenance statement. `Co-Authored-By:` and
+`Assisted-by:` are fine — they record assistance and assert no right to submit.
+
 **What AI should know:**
 - [Critical constraints or requirements]
 - [Non-obvious conventions]
