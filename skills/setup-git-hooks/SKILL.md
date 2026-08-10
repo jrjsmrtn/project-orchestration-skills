@@ -401,6 +401,69 @@ without naming a path — *"fixed both call sites"* when one edit no-op'd. No ho
 practice is to re-read the message against `git diff --cached` rather than against your intent, and
 the hook only removes the most mechanical slice of the problem.
 
+#### lefthook: pre-push gates belong in `scripts:`, not `commands:`
+
+**A repository with more than one remote silently loses its pre-push gates on every remote
+after the first.** Measured on lefthook 2.1.10, pushing one branch to three remotes: the
+first ran lint, format and 284 test assertions; the second ran them again; the **third ran
+nothing** and printed a clean summary —
+
+```text
+│  luacheck (skip) no matching push files
+│  stylua-check (skip) no matching push files
+│  test (skip) no matching push files
+```
+
+**Why.** lefthook derives the pre-push file set from **`@{push}`**, which git resolves per
+*branch*, not per *remote* — it does not vary with the remote named on the command line.
+The first push advances `@{push}`, so every later remote computes an empty diff, and
+`commands:` with an empty file set are skipped. Git hands the hook the correct remote refs
+on stdin; lefthook does not use them.
+
+Narrowed by reproduction: with no upstream configured both pushes ran; the skip appeared
+only once an upstream existed and the first push advanced it.
+
+**Two fixes that do not work**, recorded so they are not retried:
+
+- `skip_empty: false` — **not a recognised key**. lefthook 2.1.10 accepts `commands env
+  exclude fail_text files follow glob group interactive jobs only parallel piped priority
+  root run scripts skip stage_fixed tags use_stdin`. Setting it changes nothing, silently.
+- a `files:` override — the skip is decided before lefthook consults it.
+
+**The fix**: put pre-push gates in `scripts:`, which are not subject to the file-set skip.
+
+```yaml
+pre-push:
+  parallel: false
+  scripts:
+    "gates.sh":
+      runner: bash
+```
+
+with the checks in `.lefthook/pre-push/gates.sh`, each guarded so a missing tool **fails**
+rather than passes quietly.
+
+This is also the more honest shape. Pre-push gates are typically whole-repo checks — a full
+test run, a type check, a dependency audit — that never needed a file set, so scoping them
+to changed files was buying nothing and costing correctness. Keep `glob:` for **pre-commit**
+`commands:`, where staged-file scoping is the point.
+
+**Verify it, do not assume it.** Clone the repo, add two bare local remotes, set an
+upstream, commit, and push to both — the gate must run twice:
+
+```bash
+git init -q --bare /tmp/R1.git && git init -q --bare /tmp/R2.git
+git clone -q . /tmp/probe && cd /tmp/probe
+git remote add R1 /tmp/R1.git && git remote add R2 /tmp/R2.git
+git push -q R1 HEAD && git push -q R2 HEAD
+git branch --set-upstream-to=R1/$(git branch --show-current)
+git commit -q --allow-empty -m "probe"
+git push R1 HEAD && git push R2 HEAD    # both must run the gate
+```
+
+**Applies to lefthook only.** `pre-commit` (the framework) runs `stages: [pre-push]` hooks
+per invocation and does not derive files from `@{push}`.
+
 #### A DCO sign-off hook is not an agent's to satisfy
 
 A project using the **Developer Certificate of Origin** enforces it with a `commit-msg`
@@ -454,6 +517,9 @@ pre-commit:
 
 pre-push:
   parallel: true
+  # SINGLE-REMOTE SHAPE. With more than one remote, move these into `scripts:` —
+  # `commands:` are skipped on every remote after the first. See "pre-push gates
+  # belong in scripts:, not commands:" above.
   commands:
     compile:
       run: mix compile --warnings-as-errors
@@ -491,6 +557,9 @@ pre-commit:
 
 pre-push:
   parallel: true
+  # SINGLE-REMOTE SHAPE. With more than one remote, move these into `scripts:` —
+  # `commands:` are skipped on every remote after the first. See "pre-push gates
+  # belong in scripts:, not commands:" above.
   commands:
     mypy:
       run: mypy .
@@ -521,6 +590,9 @@ pre-commit:
 
 pre-push:
   parallel: true
+  # SINGLE-REMOTE SHAPE. With more than one remote, move these into `scripts:` —
+  # `commands:` are skipped on every remote after the first. See "pre-push gates
+  # belong in scripts:, not commands:" above.
   commands:
     compile:
       run: mix compile --warnings-as-errors

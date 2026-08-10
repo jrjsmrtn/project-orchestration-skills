@@ -8,6 +8,42 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.34] - 2026-08-10
+
+**A repository with three remotes ran its pre-push gates on two of them and reported a
+clean summary for the third.** lint, format and 284 test assertions on `origin` and
+`github`; on `gitlab`, three `(skip) no matching push files` lines and a green tick.
+
+### Added
+
+- **`setup-git-hooks`** — *lefthook: pre-push gates belong in `scripts:`, not `commands:`*.
+  lefthook derives the pre-push file set from **`@{push}`**, which git resolves per *branch*
+  and not per *remote*, so the first push advances it and every later remote computes an
+  empty diff. Git hands the hook the correct remote refs on stdin; lefthook does not use
+  them. `scripts:` are not subject to the skip.
+
+  Two non-fixes are recorded so they are not retried: **`skip_empty:` is not a recognised
+  key** in lefthook 2.1.10 — setting it changes nothing, silently — and a `files:` override
+  is consulted after the skip is already decided.
+
+  Includes a four-command reproduction (two bare remotes, an upstream, push twice) because
+  the failure is invisible in a summary: the gate that did nothing looks exactly like the
+  gate that passed.
+
+### Changed
+
+- All four lefthook `pre-push` examples now carry a *SINGLE-REMOTE SHAPE* annotation
+  pointing at the finding, so the examples do not quietly contradict it.
+
+### Notes
+
+- **Scoping pre-push gates to changed files was never buying anything.** A full test run, a
+  type check and a dependency audit are whole-repo checks; the `glob:` was costing
+  correctness for no benefit. `glob:` stays right for **pre-commit** `commands:`, where
+  staged-file scoping is the point.
+- **lefthook only.** The `pre-commit` framework runs `stages: [pre-push]` hooks per
+  invocation and does not derive files from `@{push}`.
+
 ## [0.1.33] - 2026-08-10
 
 **An agent signed a DCO attestation in a maintainer's name, and the skills that stand up
