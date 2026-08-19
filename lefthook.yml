@@ -70,3 +70,89 @@ pre-commit:
         else
           echo "⚠️  claude CLI not found — manifest validation SKIPPED"
         fi
+
+    # A pin commit must record itself.
+    #
+    # A marketplace SHA-pins each plugin source, so moving a SHA IS the release: it changes
+    # what every installation gets, while the plugin's own repo shows no activity at all.
+    # The convention is to move the SHA, bump the manifest `version`, and add a CHANGELOG
+    # entry naming the new pin -- and the convention was the only thing enforcing it. Seven
+    # pin commits in `jrjsmrtn-skills` moved a SHA alone, and the changelog silently stopped
+    # describing what the marketplace served.
+    #
+    # Deliberately scoped to SHA CHANGES, not to the file: editing a description, adding a
+    # homepage or reordering entries is not a release and is not gated. Inert where there is
+    # nothing to check -- a marketplace pinning by `ref:` has no SHA to move, and the plugin
+    # repos carry no marketplace.json for the glob to match.
+    #
+    # Fail-open if python3 is absent, for the same contributor reason as the commands above.
+    pin-recorded:
+      glob: ".claude-plugin/marketplace.json"
+      run: |
+        if ! command -v python3 >/dev/null 2>&1; then
+          echo "⚠️  python3 not found — pin/changelog check SKIPPED"
+          exit 0
+        fi
+        python3 - <<'PIN_CHECK'
+        import json, subprocess, sys
+
+        MANIFEST = ".claude-plugin/marketplace.json"
+
+        def read(rev):
+            p = subprocess.run(["git", "show", f"{rev}:{MANIFEST}"],
+                               capture_output=True, text=True)
+            if p.returncode != 0:
+                return None
+            try:
+                return json.loads(p.stdout)
+            except json.JSONDecodeError:
+                return None
+
+        def pins(doc):
+            out = {}
+            for entry in doc.get("plugins", []):
+                src = entry.get("source")
+                if isinstance(src, dict) and src.get("sha"):
+                    out[entry.get("name")] = src["sha"]
+            return out
+
+        staged, head = read(""), read("HEAD")
+        if staged is None:
+            print("⚠️  staged marketplace.json is unreadable — pin check SKIPPED")
+            sys.exit(0)
+        if head is None:
+            print("✓ pin/changelog: no previous manifest to compare (initial commit)")
+            sys.exit(0)
+
+        before, after = pins(head), pins(staged)
+        moved = {n: s for n, s in after.items() if s != before.get(n)}
+        if not moved:
+            print("✓ pin/changelog: no SHA moved")
+            sys.exit(0)
+
+        files = subprocess.run(["git", "diff", "--cached", "--name-only"],
+                               capture_output=True, text=True).stdout.split()
+        changelog = subprocess.run(["git", "show", ":CHANGELOG.md"],
+                                   capture_output=True, text=True)
+        text = changelog.stdout if changelog.returncode == 0 else ""
+
+        faults = []
+        if "CHANGELOG.md" not in files:
+            faults.append("CHANGELOG.md is not staged")
+        if staged.get("version") == head.get("version"):
+            faults.append(f"manifest version did not move (still {staged.get('version')})")
+        for name, sha in sorted(moved.items()):
+            if sha[:7] not in text:
+                faults.append(f"{name}: new pin {sha[:7]} is not cited in the staged CHANGELOG")
+
+        if faults:
+            print(f"✘ {len(moved)} pin(s) moved without recording the release:")
+            for f in faults:
+                print(f"    {f}")
+            print("\n  Moving a SHA changes what every installation gets, and the plugin's own")
+            print("  repo shows nothing. Bump the manifest `version` and add a CHANGELOG entry")
+            print("  naming the new pin. To bypass (NOT recommended): git commit --no-verify")
+            sys.exit(1)
+
+        print(f"✓ pin/changelog: {len(moved)} pin(s) moved, version bumped and all cited")
+        PIN_CHECK
