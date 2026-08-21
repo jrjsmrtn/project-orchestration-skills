@@ -156,3 +156,88 @@ pre-commit:
 
         print(f"✓ pin/changelog: {len(moved)} pin(s) moved, version bumped and all cited")
         PIN_CHECK
+
+    # A plugin must not contradict itself about its own version.
+    #
+    # `plugin.json` carries the plugin version and every `skills/*/SKILL.md` repeats it in
+    # `metadata.version`. The convention is lockstep; nothing in the plugin repo enforced it.
+    # okf-skills 0.1.11 shipped with all three SKILL.md files still declaring 0.1.10, and the
+    # v0.1.11 tag records that tree -- a released artifact disagreeing with itself.
+    #
+    # The pair IS checked, by check-plugin-consistency.py, but that lives in the meta-project
+    # and runs on ITS commits. A plugin repo can therefore publish the drift and only find out
+    # on the next unrelated workspace commit, which is exactly what happened. `claude plugin
+    # validate` does not cover it either -- see the note on plugin-validate above.
+    #
+    # Reads the STAGED content, so it gates what is being committed rather than the worktree.
+    # Inert where there is nothing to check: a marketplace repo carries no plugin.json, and a
+    # plugin with no skills has no version to repeat.
+    #
+    # Fail-open if python3 is absent, for the same contributor reason as the commands above.
+    version-lockstep:
+      glob:
+        - ".claude-plugin/plugin.json"
+        - "skills/**/SKILL.md"
+      run: |
+        if ! command -v python3 >/dev/null 2>&1; then
+          echo "⚠️  python3 not found — version lockstep check SKIPPED"
+          exit 0
+        fi
+        python3 - <<'LOCKSTEP'
+        import json, re, subprocess, sys
+
+        def staged(path):
+            p = subprocess.run(["git", "show", f":{path}"], capture_output=True, text=True)
+            return p.stdout if p.returncode == 0 else None
+
+        manifest = staged(".claude-plugin/plugin.json")
+        if manifest is None:
+            print("✓ version lockstep: no plugin.json (not a plugin repo)")
+            sys.exit(0)
+        try:
+            declared = json.loads(manifest).get("version")
+        except json.JSONDecodeError:
+            print("⚠️  staged plugin.json is unreadable — lockstep check SKIPPED")
+            sys.exit(0)
+        if not declared:
+            print("⚠️  plugin.json declares no version — lockstep check SKIPPED")
+            sys.exit(0)
+
+        skills = subprocess.run(["git", "ls-files", "skills/*/SKILL.md"],
+                                capture_output=True, text=True).stdout.split()
+        if not skills:
+            print(f"✓ version lockstep: {declared}, no skills to check")
+            sys.exit(0)
+
+        # metadata.version inside the YAML frontmatter only -- the body of a skill may
+        # legitimately contain a `version:` line as example content, and does.
+        FRONTMATTER = re.compile(r"\A---\n(.*?)\n---\n", re.S)
+        VERSION = re.compile(r"^\s+version:\s*[\"']?([^\"'\s]+)", re.M)
+
+        faults = []
+        for path in sorted(skills):
+            text = staged(path)
+            if text is None:
+                continue
+            fm = FRONTMATTER.match(text)
+            if not fm:
+                faults.append(f"{path}: no YAML frontmatter")
+                continue
+            found = VERSION.search(fm.group(1))
+            if not found:
+                faults.append(f"{path}: frontmatter declares no metadata.version")
+            elif found.group(1) != declared:
+                faults.append(f"{path}: {found.group(1)} != plugin.json {declared}")
+
+        if faults:
+            print(f"✘ version lockstep broken against plugin.json {declared}:")
+            for f in faults:
+                print(f"    {f}")
+            print("\n  A release that bumps the manifest and leaves the skills behind ships an")
+            print("  artifact that contradicts itself, and the tag records it. Bump every")
+            print("  SKILL.md `metadata.version` to match. To bypass (NOT recommended):")
+            print("  git commit --no-verify")
+            sys.exit(1)
+
+        print(f"✓ version lockstep: {declared} across {len(skills)} skill(s)")
+        LOCKSTEP
