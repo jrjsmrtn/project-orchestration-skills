@@ -8,6 +8,15 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+### Fixed
+
+- **The `gitleaks` gate failed open.** When `gitleaks` was not on `PATH` the hook printed
+  `secret scan SKIPPED` and exited 0, so a machine without it committed unscanned — and the scan a
+  person believes is running is what makes it safe to stage a file without reading it. It now
+  blocks the commit. Verified by hiding `gitleaks` from `PATH`: the hook exits 1 where it
+  previously exited 0. One of thirteen repositories carrying the same copied guard; the
+  fail-closed pattern already existed in `macports-scripts` and had never propagated.
+
 ## [0.1.34] - 2026-08-10
 
 **A repository with three remotes ran its pre-push gates on two of them and reported a

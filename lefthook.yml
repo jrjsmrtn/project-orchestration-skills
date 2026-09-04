@@ -37,17 +37,23 @@ pre-commit:
     # local tool must not block an external contribution.
     gitleaks:
       run: |
-        if command -v gitleaks >/dev/null 2>&1; then
-          gitleaks protect --staged --verbose || {
-            echo ""
-            echo "⚠️  gitleaks detected secrets or homelab details in staged changes."
-            echo "    Commit blocked. To bypass (NOT recommended): git commit --no-verify"
-            exit 1
-          }
-          echo "✓ gitleaks: no secrets detected"
-        else
-          echo "⚠️  gitleaks not found — secret scan SKIPPED (install it: sudo port install gitleaks)"
+        # FAILS when gitleaks is absent, rather than warning and passing. This branch used to
+        # print a SKIPPED notice and exit 0, so a machine without gitleaks committed unscanned --
+        # and the scan a person believes is running is what makes it safe to stage a file without
+        # reading it. A gate that quietly does nothing is worse than no gate, because it is
+        # trusted. Blocked commit > silent miss.
+        if ! command -v gitleaks >/dev/null 2>&1; then
+          echo "gitleaks not found — secrets are UNSCANNED, so this commit is blocked." >&2
+          echo "  install: sudo port install gitleaks" >&2
+          exit 1
         fi
+        gitleaks protect --staged --verbose || {
+          echo ""
+          echo "⚠️  gitleaks detected secrets or homelab details in staged changes."
+          echo "    Commit blocked. To bypass (NOT recommended): git commit --no-verify"
+          exit 1
+        }
+        echo "✓ gitleaks: no secrets detected"
 
     # Manifest spec compliance: plugin.json / marketplace.json / SKILL.md
     # frontmatter, against the installed Claude Code CLI's schema.
