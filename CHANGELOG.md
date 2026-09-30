@@ -8,6 +8,15 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+### Changed
+
+- **`setup-architecture-as-code`: native OCI runtime and a pinned Structurizr image.** The
+  Makefile targets use `CONTAINER_RUNTIME` (the first of `container`, `wslc`, `podman`,
+  `docker` found; overridable) and `STRUCTURIZR_IMAGE` (`structurizr/structurizr:2026.09.19`),
+  and the README template's commands use `$RUNTIME` and the dated tag; `:z` dropped from the
+  volumes. Verified by running the Makefile as shipped against a real workspace: it picked
+  Apple `container`, `validate-architecture` passed, and a bogus runtime failed cleanly.
+
 ### Fixed
 
 - **The `gitleaks` gate failed open.** When `gitleaks` was not on `PATH` the hook printed

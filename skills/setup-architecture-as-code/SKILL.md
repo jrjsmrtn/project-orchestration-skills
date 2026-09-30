@@ -34,7 +34,8 @@ Architecture-as-Code treats architecture documentation like source code:
 **Implementation Stack**:
 - **Modeling Approach**: C4 Model (Context, Container, Component, Code)
 - **Definition Language**: Structurizr DSL
-- **Validation & Inspection**: structurizr/structurizr (consolidated image, replaces deprecated `structurizr/cli` and `structurizr/lite`)
+- **Validation & Inspection**: structurizr/structurizr (consolidated image, replaces deprecated `structurizr/cli` and `structurizr/lite`), pinned to a dated tag (currently `2026.09.19`; `latest` moves)
+- **Runtime**: the most native OCI runtime available: Apple `container` on Apple Silicon macOS, `wslc` on Windows where available, else podman (Docker works too)
 - **Visualization**: structurizr/structurizr `local` subcommand or Structurizr Cloud
 
 ## Required Inputs
@@ -377,10 +378,10 @@ The `docs` symlink allows workspace files to use `!adrs docs/adr` and `!docs doc
 # Start the local viewer (replaces Structurizr Lite)
 make view-architecture
 # or (mount the project root, not just architecture/, so the docs symlink resolves):
-podman run --rm -p 8080:8080 \
-  -v "$(pwd):/usr/local/structurizr:z" \
+$RUNTIME run --rm -p 8080:8080 \
+  -v "$(pwd):/usr/local/structurizr" \
   -e STRUCTURIZR_WORKSPACE_PATH=architecture \
-  structurizr/structurizr local
+  structurizr/structurizr:2026.09.19 local
 ```
 
 Then open http://localhost:8080
@@ -390,9 +391,9 @@ Then open http://localhost:8080
 ```bash
 make validate-architecture
 # or (mount the project root so !adrs/!docs symlinks resolve):
-podman run --rm \
-  -v "$(pwd):/work:z" \
-  structurizr/structurizr validate -w /work/architecture/workspace.dsl
+$RUNTIME run --rm \
+  -v "$(pwd):/work" \
+  structurizr/structurizr:2026.09.19 validate -w /work/architecture/workspace.dsl
 ```
 
 ### Export Diagrams
@@ -400,9 +401,9 @@ podman run --rm \
 ```bash
 make export-architecture
 # or (mount the project root so !adrs/!docs symlinks resolve):
-podman run --rm \
-  -v "$(pwd):/work:z" \
-  structurizr/structurizr export -w /work/architecture/workspace.dsl -format plantuml
+$RUNTIME run --rm \
+  -v "$(pwd):/work" \
+  structurizr/structurizr:2026.09.19 export -w /work/architecture/workspace.dsl -format plantuml
 ```
 
 ## C4 Model Levels
@@ -444,37 +445,43 @@ Add to project `Makefile`:
 # Architecture-as-Code targets
 .PHONY: validate-architecture inspect-architecture view-architecture export-architecture
 
+# Most native OCI runtime first; override with CONTAINER_RUNTIME=podman etc.
+# Apple `container` needs `container system start` once per boot.
+CONTAINER_RUNTIME ?= $(shell for r in container wslc podman docker; do command -v $$r >/dev/null 2>&1 && { echo $$r; break; }; done)
+# Pin a dated tag: `latest` moves, and a newer release can reject a model an older one accepted.
+STRUCTURIZR_IMAGE ?= structurizr/structurizr:2026.09.19
+
 validate-architecture:
 	@echo "Validating architecture model..."
-	podman run --rm \
-		-v "$(PWD):/work:z" \
-		structurizr/structurizr validate -w /work/architecture/workspace.dsl
+	$(CONTAINER_RUNTIME) run --rm \
+		-v "$(PWD):/work" \
+		$(STRUCTURIZR_IMAGE) validate -w /work/architecture/workspace.dsl
 
 inspect-architecture:
 	@echo "Inspecting architecture model (Checkstyle-style rules)..."
-	podman run --rm \
-		-v "$(PWD):/work:z" \
-		structurizr/structurizr inspect -w /work/architecture/workspace.dsl -s error,warning
+	$(CONTAINER_RUNTIME) run --rm \
+		-v "$(PWD):/work" \
+		$(STRUCTURIZR_IMAGE) inspect -w /work/architecture/workspace.dsl -s error,warning
 
 view-architecture:
 	@echo "Starting Structurizr local viewer on http://localhost:8080..."
 	@echo "Press Ctrl+C to stop"
-	podman run --rm -p 8080:8080 \
-		-v "$(PWD):/usr/local/structurizr:z" \
+	$(CONTAINER_RUNTIME) run --rm -p 8080:8080 \
+		-v "$(PWD):/usr/local/structurizr" \
 		-e STRUCTURIZR_WORKSPACE_PATH=architecture \
-		structurizr/structurizr local
+		$(STRUCTURIZR_IMAGE) local
 
 export-architecture:
 	@echo "Exporting architecture to PlantUML..."
-	podman run --rm \
-		-v "$(PWD):/work:z" \
-		structurizr/structurizr export -w /work/architecture/workspace.dsl -format plantuml -output /work/architecture/diagrams/
+	$(CONTAINER_RUNTIME) run --rm \
+		-v "$(PWD):/work" \
+		$(STRUCTURIZR_IMAGE) export -w /work/architecture/workspace.dsl -format plantuml -output /work/architecture/diagrams/
 
 export-architecture-json:
 	@echo "Exporting architecture to JSON..."
-	podman run --rm \
-		-v "$(PWD):/work:z" \
-		structurizr/structurizr export -w /work/architecture/workspace.dsl -format json
+	$(CONTAINER_RUNTIME) run --rm \
+		-v "$(PWD):/work" \
+		$(STRUCTURIZR_IMAGE) export -w /work/architecture/workspace.dsl -format json
 ```
 
 ### Step 6: Validate and Commit
@@ -483,8 +490,8 @@ export-architecture-json:
 # Validate the model
 make validate-architecture
 # or manually (mount the project root so !adrs/!docs symlinks resolve):
-podman run --rm -v "$(pwd):/work:z" \
-  structurizr/structurizr validate -w /work/architecture/workspace.dsl
+$RUNTIME run --rm -v "$(pwd):/work" \
+  structurizr/structurizr:2026.09.19 validate -w /work/architecture/workspace.dsl
 
 # View to verify (optional)
 make view-architecture
