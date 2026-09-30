@@ -8,6 +8,8 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.35] - 2026-09-30
+
 ### Changed
 
 - **`setup-architecture-as-code`: native OCI runtime and a pinned Structurizr image.** The
