@@ -8,6 +8,8 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.36] - 2026-11-03
+
 ### Removed
 
 - **`analyze-project`: the "alternative interpretation" of SPARK** (Situation, Proposal,
