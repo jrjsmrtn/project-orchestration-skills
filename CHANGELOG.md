@@ -8,6 +8,15 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+### Removed
+
+- **`analyze-project`: the "alternative interpretation" of SPARK** (Situation, Proposal,
+  Agreement, Resources, Kickers), attributed to "some practitioners". It cited no source, and a
+  search on 2026-11-03 found none — the web, archive.org full text, the pattern-language
+  repositories and the author's notes. It also had no workflow behind it: the skill's templates,
+  validation and role table all follow Stakeholders, Problem, Analysis, Risks, Knowledge, so a
+  reader who chose the variant was left with nothing to run.
+
 ## [0.1.35] - 2026-09-30
 
 ### Changed

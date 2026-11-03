@@ -28,8 +28,6 @@ SPARK is a structured inception methodology for validating project viability:
 - **R**isks: What could go wrong? How do we mitigate?
 - **K**nowledge: What do we know? What gaps exist?
 
-> **Alternative Interpretation**: Some practitioners use SPARK as: **S**ituation, **P**roposal, **A**greement, **R**esources, **K**ickers. This variant focuses more on proposal-driven inception where the situation is assessed, a proposal is made, agreement is sought, resources are identified, and potential "kickers" (deal-breakers or critical success factors) are surfaced early. Choose the interpretation that best fits your project context.
-
 ## Required Inputs
 
 1. **Project idea/concept** (initial description)
