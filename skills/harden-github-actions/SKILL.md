@@ -3,7 +3,7 @@ name: harden-github-actions
 description: Harden GitHub Actions CI/CD workflows for supply-chain security — SHA-pin actions, least-privilege token permissions, verified toolchain installs, OpenSSF Scorecard, and SLSA provenance. Use when adding or auditing GitHub Actions workflows, before making a repository public, when a supply-chain review flags CI gaps, or when standardizing CI hardening across GitHub projects. GitHub-specific by design — GitLab CI and Forgejo Actions are out of scope.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.38"
+  version: "0.1.39"
 license: MIT
 ---
 
@@ -247,6 +247,52 @@ Every tool a job installs is attack surface. In order of preference:
        tar xzf tool.tar.gz
    ```
 3. **Pinned package version** for distro/language packages.
+4. **Hash-verified install** where the ecosystem has one — see below for Python. It is the strongest
+   form of 3, and the easiest to claim without having.
+
+#### Python: `--require-hashes` needs a lockfile you generate
+
+`pip install --require-hashes -r requirements-ci.txt` is only a control if `requirements-ci.txt`
+carries a hash for **every** package, transitive ones included. A hand-written list of pins is not
+that, and writing the flag without the file produces a control that does not exist. Measured with
+pip 26.2.2:
+
+```text
+$ pip install --require-hashes jsonschema==4.23.0
+ERROR: Hashes are required in --require-hashes mode, but they are missing from some requirements.
+```
+
+Generate the file; never write it:
+
+```bash
+# requirements.in lists your direct dependencies, unpinned.
+uv pip compile requirements.in --generate-hashes --universal --no-header -o requirements-ci.txt
+python -m pip install --require-hashes -r requirements-ci.txt      # in CI
+```
+
+**`--universal` matters, and the reason is dependency markers, not wheels.** A lockfile compiled for
+one platform omits the dependencies other platforms need. Measured on `ipykernel`: the lockfile
+compiled for `x86_64-unknown-linux-gnu` had no `appnope` (a macOS-only dependency), and installing
+it on macOS failed with *"all requirements must have their versions pinned with =="*. The
+`--universal` file kept `appnope` under `; sys_platform == 'darwin'` and installed cleanly on macOS.
+Hashes were not the issue: the lockfile hashed every wheel of a release (128 for `rpds-py`) whether
+compiled for Linux or universally. Tested on macOS arm64 only; installing the universal file on Linux
+was not run. `uv` 0.13.0 was used; `pip-compile --generate-hashes` from pip-tools is the other common
+route and was not tested here.
+
+**Assert the lockfile is not stale** — otherwise it quietly stops matching `requirements.in`:
+
+```bash
+cp requirements-ci.txt /tmp/lock.check
+uv pip compile requirements.in --generate-hashes --universal --no-header -q -o /tmp/lock.check
+diff -q requirements-ci.txt /tmp/lock.check     # non-zero (and a message) means regenerate and commit
+```
+
+Compiling into a copy of the existing lockfile keeps its pins, so the diff is empty unless
+`requirements.in` changed. Measured: unchanged → exit 0; a dependency added to the `.in` → non-zero.
+
+**If you cannot generate the lockfile, say so.** Pin the exact version (`tool==1.2.3`), record in
+`quality-configuration.md` that hashes are *not* verified, and do not claim `--require-hashes`.
 
 Anti-patterns to eliminate (all seen in real workflows):
 

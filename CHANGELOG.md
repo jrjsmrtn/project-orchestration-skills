@@ -8,6 +8,30 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.39] - 2026-11-13
+
+### Added
+
+- **`plan-sprint` Step 1b: de-risk the premise** (roadmap H30). A backlog item is a hypothesis;
+  probe the premise before the plan commits a sprint to it, and record each result in a `## De-risk`
+  section (verdict: viable, reshaped or rejected, with the measurement). Both plan templates gain the
+  section. Ships `check-derisk.sh`, which checks the section exists and every row ends in a verdict;
+  run against fixtures (complete → 0; "probably ok" → 1; empty verdict → 1; no section → 1; empty
+  table → 1; no file → 2) and against the shipped template (unfilled → 1, filled → 0). It checks
+  shape only and cannot tell whether a probe was run.
+
+### Changed
+
+- **`harden-github-actions` Step 5: `--require-hashes` now says what it needs** (H15a). The step
+  recommended verified installs without noting that `pip install --require-hashes` requires a
+  generated lockfile carrying a hash for every package. Measured with pip 26.2.2 and uv 0.13.0: a
+  plain pin list fails with "Hashes are required"; a lockfile compiled for one platform omitted a
+  macOS-only dependency (`appnope`) and failed to install on macOS, while `--universal` installed.
+  The cause is dependency markers, not wheels — every wheel of a release was hashed either way.
+  Adds the generation command and a staleness check (unchanged → 0, a dependency added → non-zero),
+  and says to record that hashes are unverified when no lockfile can be generated. Tested on macOS
+  arm64 only; `pip-compile` was not tested.
+
 ## [0.1.38] - 2026-11-13
 
 ### Added

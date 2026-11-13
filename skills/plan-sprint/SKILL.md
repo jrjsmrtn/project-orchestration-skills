@@ -3,7 +3,7 @@ name: plan-sprint
 description: Create a sprint plan for a new development cycle. Use when starting a new sprint, after completing wrapup-sprint, or when initializing Sprint 1 for a new project.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.38"
+  version: "0.1.39"
 license: MIT
 ---
 
@@ -49,6 +49,29 @@ Calculate:
 - **Current phase**: From roadmap (e.g., "Phase 1: Foundation")
 - **Start date**: Today
 
+### Step 1b: De-risk the Premise
+
+A backlog item is a **hypothesis**, not a specification. It sat on the backlog because it sounded
+plausible, and nothing has yet tested whether the thing it assumes is true. Test that before the plan
+commits a sprint to it — the unexamined premise is the blocker that surfaces last.
+
+For each deliverable, ask *what must be true for this to be worth doing*, and run the cheapest probe
+that would show it false — a command, a measurement, a throwaway script, thirty minutes at most:
+
+- **Viable** — the probe confirmed the premise. Plan it as written.
+- **Reshaped** — the probe showed the real variable is something else. Plan the reshaped item.
+- **Rejected** — the probe showed it cannot or should not be done. Drop it from the plan, and annotate
+  the backlog item with the result so it is not re-proposed.
+
+Record each in the plan's **De-risk** section with the measurement, not an opinion. Observed once: an
+item to extend one construct to all five graph-shaped diagram types had sat plausible for two sprints.
+Thirty minutes of measurement showed three of the five were structurally unreachable and the other two
+*regressed* — and that the real variable was label length, so a redesign became one threshold constant.
+
+Where there is genuinely no premise to test (a pure rename, a documented one-line fix), say so in a
+row rather than omitting the section. Skipping the step silently and recording that it did not apply are
+different things, and only the second can be read back later.
+
 ### Step 2: Choose Sprint Plan Format
 
 Two formats are available. Choose based on project type:
@@ -77,6 +100,12 @@ Create `docs/sprints/sprint-NNNN-plan.md` (4-digit zero-padded, e.g., `sprint-00
 ## Context
 
 [Only if this sprint builds on prior sprints or requires background. Otherwise omit.]
+
+## De-risk
+
+| Deliverable | Premise | Probe | Result | Verdict |
+|---|---|---|---|---|
+| 1 | [What must be true] | [Command or measurement] | [What it showed] | viable / reshaped / rejected |
 
 ## Deliverables
 
@@ -117,6 +146,12 @@ Create `docs/sprints/sprint-NNNN-plan.md` (4-digit zero-padded, e.g., `sprint-00
 ## Sprint Goal
 
 [Clear, measurable 1-2 sentence goal that defines success for this sprint]
+
+## De-risk
+
+| Story | Premise | Probe | Result | Verdict |
+|---|---|---|---|---|
+| N.1 | [What must be true] | [Command or measurement] | [What it showed] | viable / reshaped / rejected |
 
 ## User Stories
 
@@ -225,11 +260,12 @@ git commit -m "docs: add Sprint N plan (v0.1.x)"
 2. **Be realistic**: Don't overcommit — a focused sprint beats an ambitious one
 3. **Keep deliverables small**: If something feels too large, split it
 4. **Surface blockers early**: Dependencies and risks belong in the plan, not discovered mid-sprint
+5. **Test the premise, not only the size**: a small item built on a false assumption is still wasted — probe it (Step 1b) before it is planned
 
 ## Outputs
 
 This skill creates:
-- [ ] `docs/sprints/sprint-NNNN-plan.md`
+- [ ] `docs/sprints/sprint-NNNN-plan.md`, including a `## De-risk` section with a verdict per deliverable
 - [ ] Updated `docs/sprints/README.md`
 - [ ] Updated `CLAUDE.md` (current sprint reference)
 - [ ] Git commit: `docs: add Sprint N plan`
@@ -240,12 +276,40 @@ This skill creates:
 # Verify sprint plan exists (glob matches any zero-padded sprint number)
 ls docs/sprints/sprint-*-plan.md
 
+# Every deliverable's premise has a verdict (expect exit 0; any other exit is a failure)
+scripts/check-derisk.sh docs/sprints/sprint-NNNN-plan.md
+
 # Verify CLAUDE.md updated
 grep "Current Sprint" CLAUDE.md
 
 # Verify sprint index updated
 grep "Active Sprint" docs/sprints/README.md
 ```
+
+The check, to keep as `scripts/check-derisk.sh`:
+
+```bash
+#!/usr/bin/env bash
+# Every row of the plan's "## De-risk" table must end in a verdict: viable, reshaped or rejected.
+#   usage: scripts/check-derisk.sh docs/sprints/sprint-NNNN-plan.md
+# Exit: 0 section present, >=1 row, every row has a verdict | 1 otherwise | 2 no such file
+set -u
+f="${1:-}"; [ -f "$f" ] || { echo "FAIL: no such plan '$f'" >&2; exit 2; }
+grep -q '^## De-risk' "$f" || { echo "FAIL: $f has no '## De-risk' section" >&2; exit 1; }
+rows=$(awk '/^## De-risk/{s=1;next} /^## /{s=0} s && /^\|/ && !/^\|[-: |]+\|$/' "$f" | tail -n +2)   # drop the header row
+[ -n "$rows" ] || { echo "FAIL: '## De-risk' has no rows — state one, or 'none: <reason>' as a row" >&2; exit 1; }
+bad=$(printf '%s\n' "$rows" | grep -viE '\|[[:space:]]*(viable|reshaped|rejected)[[:space:]]*\|?[[:space:]]*$' || true)
+if [ -n "$bad" ]; then
+  echo "FAIL: De-risk rows without a verdict (viable | reshaped | rejected):" >&2
+  printf '%s\n' "$bad" >&2; exit 1
+fi
+echo "De-risk: $(printf '%s\n' "$rows" | grep -c .) row(s), each with a verdict"
+```
+
+It checks **shape**: the section exists and every row ends in a verdict. It cannot tell whether a probe
+was actually run, so a row reading "viable" with no measurement still passes — the Result column is
+where a reviewer reads that. Run against fixtures: a complete table → 0; a row ending in "probably ok"
+→ 1; a row with an empty verdict → 1; no section → 1; an empty table → 1; no such file → 2.
 
 ## Related Skills
 
