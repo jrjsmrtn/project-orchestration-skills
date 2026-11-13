@@ -3,7 +3,7 @@ name: setup-git-hooks
 description: Configure two-stage git hooks (pre-commit + pre-push) for quality automation, with either pre-commit or lefthook as the hook manager. Use after bootstrap-project and setup-adrs, when adding quality gates to an existing project, or when standardizing quality automation.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.37"
+  version: "0.1.38"
 license: MIT
 ---
 
@@ -576,6 +576,42 @@ git push R1 HEAD && git push R2 HEAD    # both must run the gate
 **Applies to lefthook only.** `pre-commit` (the framework) runs `stages: [pre-push]` hooks
 per invocation and does not derive files from `@{push}`.
 
+#### Enforcing the DCO: a `commit-msg` gate that rejects
+
+A project that chooses the Developer Certificate of Origin needs the choice enforced, and `public-release`
+stops at the decision. The hook **rejects** an unsigned commit; it must never append the trailer for
+you. Git deliberately has no `commit.signoff` setting: its FAQ ("Why not have commit.signoff…") argues that
+automating the sign-off makes it arguable the trailer was "added out of habit or by automation, without the
+committer's full awareness", which undermines what the DCO is for, and calls `format.signoff` "a historical
+mistake". So the person types `git commit -s`, and the hook makes forgetting impossible to miss.
+
+```yaml
+commit-msg:
+  commands:
+    dco-signoff:
+      # {1} is the path to the prepared commit message
+      run: >
+        if [ -f "$(git rev-parse --git-dir)/MERGE_HEAD" ]; then
+          exit 0;
+        elif grep -qiE '^Signed-off-by: .+ <[^>]+@[^>]+>' "{1}"; then
+          exit 0;
+        else
+          echo "FAIL: no Signed-off-by trailer — this project uses the DCO.";
+          echo "  sign off:  git commit -s";
+          echo "  fix last:  git commit -s --amend --no-edit";
+          exit 1;
+        fi
+```
+
+A merge in progress is exempt. The hook checks only that a well-formed trailer is **present**; it
+does not compare signer to author, which needs the commit's metadata. That comparison, the bot exemption
+and the pull-request side (a contributor runs none of your hooks) live in `check-dco.sh`, in
+`harden-github-actions` Step 8b.
+
+Tested with `lefthook run commit-msg <message-file>` on lefthook 2.2.2: unsigned → exit 1; signed → 0; a
+trailer with no email → 1; a merge in progress → 0. A lowercase `signed-off-by:` is accepted by the hook, and by `check-dco.sh`, which reads trailers
+through git's own parser.
+
 #### A DCO sign-off hook is not an agent's to satisfy
 
 A project using the **Developer Certificate of Origin** enforces it with a `commit-msg`
@@ -946,6 +982,7 @@ This skill creates:
 - [ ] `.git/hooks/pre-commit` (installed by hook framework)
 - [ ] `.git/hooks/pre-push` (installed by hook framework)
 - [ ] `.git/hooks/pre-push-remote-check` (optional, for multi-remote)
+- [ ] (DCO projects) a `commit-msg` gate that rejects an unsigned commit — and the PR-side job from `harden-github-actions` Step 8b
 - [ ] `scripts/need.sh` (a missing tool fails the gate) and, where a lint tool is pinned, `scripts/pinned-tool.sh`
 - [ ] `{:mix_audit, ...}` added to `mix.exs` deps (Elixir CVE-audit prerequisite)
 - [ ] Dependency audit enforced in a CI `audit` job (not hook-only) + scheduled re-run

@@ -3,7 +3,7 @@ name: harden-github-actions
 description: Harden GitHub Actions CI/CD workflows for supply-chain security — SHA-pin actions, least-privilege token permissions, verified toolchain installs, OpenSSF Scorecard, and SLSA provenance. Use when adding or auditing GitHub Actions workflows, before making a repository public, when a supply-chain review flags CI gaps, or when standardizing CI hardening across GitHub projects. GitHub-specific by design — GitLab CI and Forgejo Actions are out of scope.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.37"
+  version: "0.1.38"
 license: MIT
 ---
 
@@ -80,7 +80,110 @@ Resolve a tag to its commit SHA:
 gh api repos/actions/checkout/commits/v4.2.2 --jq '.sha'
 ```
 
-Keep pins current automatically with a Dependabot `github-actions` update block (see `bootstrap-project` / the dependency-update config). Dependabot preserves the `# vX.Y.Z` comment when it bumps a SHA.
+Keep pins current automatically with a Dependabot `github-actions` update block (see `bootstrap-project` / the dependency-update config).
+
+**Dependabot keeps the `# vX.Y.Z` comment as it was — that is the hazard, not a convenience.** It is
+only safe *within* a major. Observed (August 2026): Dependabot moved a `github/codeql-action/upload-sarif`
+pin from a `v3` SHA to the SHA that `v4.37.6` resolves to, and left the comment reading `# v3`. The
+workflow then ran v4 code labelled v3. It is invisible in review — the diff shows a SHA change and an
+unchanged comment, which is exactly what a normal bump looks like. Only resolving the tag catches it.
+
+So:
+
+- Label each pin with an **exact patch tag** (`# v4.37.6`), not a floating major (`# v4`). A major alias
+  *moves*, so a comment naming it can never be shown wrong.
+- **Assert the label is true** in CI (Step 2b), rather than trusting a comment.
+- **Never write a SHA by hand or from memory.** Resolve it with the `gh api` command above. A wrong SHA
+  is precisely the failure pinning exists to prevent.
+
+### Step 2b: Audit the pin labels
+
+A pin's comment is a claim. This check resolves it: every `uses:` must be a 40-hex SHA, carry a tag
+comment, and that tag must resolve to that SHA.
+
+```bash
+# scripts/check-action-pins.sh
+#!/usr/bin/env bash
+# Every `uses: owner/repo@<sha> # <tag>` must pin a 40-hex commit SHA, and that SHA must be
+# the commit <tag> actually resolves to. A comment is a claim; this resolves it.
+#   usage: scripts/check-action-pins.sh [workflow-dir]        (default .github/workflows)
+# Exit: 0 all pins true | 1 unpinned, unlabelled or mislabelled | 2 could not run
+# (2, not 0, when it cannot run or finds no `uses:` — a checker that checked nothing passed nothing.)
+# Needs `gh` authenticated (GH_TOKEN in CI).
+set -u
+DIR="${1:-.github/workflows}"
+
+command -v gh >/dev/null 2>&1 || { echo "FAIL: gh not on PATH — pins NOT checked" >&2; exit 2; }
+gh auth status >/dev/null 2>&1 || { echo "FAIL: gh not authenticated (set GH_TOKEN in CI) — pins NOT checked" >&2; exit 2; }
+[ -d "$DIR" ] || { echo "FAIL: no workflow directory '$DIR'" >&2; exit 2; }
+
+# External actions only: skip local (./) and docker:// references, and the SLSA generator,
+# which must be tag-referenced (Step 7) and so can never be a SHA pin.
+lines=$(grep -rhE '^[[:space:]]*-?[[:space:]]*uses:' "$DIR" \
+  | sed -E 's/^[[:space:]]*-?[[:space:]]*uses:[[:space:]]*//' \
+  | grep -vE '^(\./|docker://|slsa-framework/slsa-github-generator/)' | sort -u)
+if [ -z "$lines" ]; then
+  echo "FAIL: no 'uses:' entries under $DIR — wrong path, or the grep broke" >&2
+  exit 2
+fi
+
+bad=0 checked=0
+while IFS= read -r line; do
+  spec=$(printf '%s' "${line%%#*}" | tr -d '[:space:]')
+  tag=$(printf '%s' "$line" | sed -nE 's/^[^#]*#[[:space:]]*([^[:space:]]+).*/\1/p')
+  ref=${spec##*@}; path=${spec%@*}
+  repo=$(printf '%s' "$path" | cut -d/ -f1,2)        # drop a subpath: owner/repo/sub -> owner/repo
+  checked=$((checked + 1))
+
+  if ! printf '%s' "$ref" | grep -qE '^[0-9a-f]{40}$'; then
+    echo "FAIL $path — pinned to '$ref', not a 40-hex commit SHA"; bad=$((bad + 1)); continue
+  fi
+  if [ -z "$tag" ]; then
+    echo "FAIL $path — SHA pin has no '# <tag>' comment, so nothing says which version it is"; bad=$((bad + 1)); continue
+  fi
+  # gh prints the API error body on stdout too, so take the output only on success.
+  real=$(gh api "repos/$repo/commits/$tag" --jq .sha 2>/dev/null) || real=""
+  if [ -z "$real" ]; then
+    echo "FAIL $path — tag '$tag' does not resolve in $repo"; bad=$((bad + 1))
+  elif [ "$real" != "$ref" ]; then
+    echo "FAIL $path — labelled '$tag' but that tag is ${real:0:12}, pinned ${ref:0:12}"; bad=$((bad + 1))
+  elif printf '%s' "$tag" | grep -qE '^v?[0-9]+$'; then
+    # True today, but a major alias MOVES: the comment can go stale with no way to show it.
+    echo "WARN $path — '$tag' is a floating major; prefer an exact tag (vX.Y.Z)"
+  fi
+done <<< "$lines"
+
+if [ "$bad" -gt 0 ]; then
+  echo "action pins: $bad of $checked bad. Resolve, never write from memory:" >&2
+  echo "  gh api repos/<owner>/<repo>/commits/<tag> --jq .sha" >&2
+  exit 1
+fi
+echo "action pins: all $checked pinned to a SHA matching their stated tag"
+```
+
+Run it as a CI job so it gates the merge (it needs `gh`, which the GitHub-hosted Ubuntu runner image includes):
+
+```yaml
+  action-pins:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@<sha of the exact tag> # vX.Y.Z   # resolve it; do not type it
+        with:
+          persist-credentials: false
+      - run: scripts/check-action-pins.sh
+        env:
+          GH_TOKEN: ${{ github.token }}   # `gh api` resolves each tag to its commit
+```
+
+Exit codes: **0** all pins true; **1** an unpinned, unlabelled or mislabelled action; **2** it could not
+run (no `gh`, no auth, no `uses:` found) — a checker that checked nothing must not pass. A floating-major
+label is reported as a warning, not an error. It skips local (`./`) and `docker://` references and the SLSA generator, whose tag reference is the sanctioned exception below.
+
+Proven before it was written down, against live GitHub tags: a correct pin → 0; a `v3.6.0` SHA labelled
+`v4.2.2` (the Dependabot case) → 1; a mutable tag → 1; no comment → 1; an unresolvable tag → 1; no
+`uses:` at all → 2; `gh` off `PATH` → 2. Not yet run as a GitHub Actions job.
 
 **The one sanctioned exception**: reusable workflows that verify their own release tag — notably `slsa-framework/slsa-github-generator` — **must** be referenced by semantic version tag, not SHA (see Step 7). Document the exception in an ADR and in a comment on the line.
 
@@ -270,10 +373,101 @@ the one field that still needs an explicit value alongside the gate.)
 - **Optional egress control**: `step-security/harden-runner` (SHA-pinned) to audit/block network egress.
 - **CodeQL** code scanning (`codeql-action/init` + `analyze`) for compiled/scripted languages — note: uploading a Scorecard SARIF is *not* code scanning.
 
+### Step 8b: DCO sign-off on pull requests (projects that use the DCO)
+
+A `commit-msg` hook (see `setup-git-hooks`) covers the maintainer's own commits. **A contributor runs
+none of your hooks**, so the enforcement point for pull requests is CI. Three details decide whether
+it works:
+
+- **Reject, never append.** The job fails an unsigned commit; it does not add a trailer.
+- **Match the signer to the author**, case-insensitively. A sign-off by someone else certifies
+  nothing about the commit's author.
+- **Exempt bots from the match, not from the trailer.** Dependabot signs as
+  `dependabot[bot] <support@github.com>` while authoring as
+  `<id>+dependabot[bot]@users.noreply.github.com`, so a strict author match **blocks every dependency
+  PR**. Observed on a live pull request, not predicted. Merge commits are exempt entirely: a merge
+  certifies nothing about the merged work.
+
+```bash
+# scripts/check-dco.sh
+#!/usr/bin/env bash
+# DCO gate for incoming changes: every non-merge commit in BASE..HEAD must carry a
+# `Signed-off-by:` trailer whose email matches the commit author's.
+#   usage: scripts/check-dco.sh BASE [HEAD]            e.g.  check-dco.sh origin/main HEAD
+# Exit: 0 all signed | 1 unsigned or mismatched | 2 could not run (unresolvable range)
+# Contributors run none of the maintainer's hooks, so this is the enforcement point for PRs.
+# Merge commits are exempt: a merge certifies nothing about the merged work's authorship.
+set -u
+BASE="${1:-}"; HEAD_REF="${2:-HEAD}"
+[ -n "$BASE" ] || { echo "usage: $0 BASE [HEAD]" >&2; exit 2; }
+
+# An unresolvable base would yield zero commits and look like success — so it is an error.
+git rev-parse --verify --quiet "$BASE^{commit}" >/dev/null \
+  || { echo "FAIL: cannot resolve '$BASE' (shallow clone? needs fetch-depth: 0) — DCO NOT checked" >&2; exit 2; }
+git rev-parse --verify --quiet "$HEAD_REF^{commit}" >/dev/null \
+  || { echo "FAIL: cannot resolve '$HEAD_REF' — DCO NOT checked" >&2; exit 2; }
+
+commits=$(git rev-list --no-merges "$BASE..$HEAD_REF")
+[ -n "$commits" ] || { echo "DCO: no non-merge commits in $BASE..$HEAD_REF — nothing to check"; exit 0; }
+
+n=0 bad=0
+while IFS= read -r sha; do
+  [ -n "$sha" ] || continue
+  n=$((n + 1))
+  author=$(git log -1 --format='%ae' "$sha")
+  subject=$(git log -1 --format='%s' "$sha")
+  signers=$(git log -1 --format='%(trailers:key=Signed-off-by,valueonly)' "$sha")
+  if [ -z "$signers" ]; then
+    echo "FAIL $(git rev-parse --short "$sha")  no Signed-off-by — $subject"; bad=$((bad + 1)); continue
+  fi
+  # Bots still need the trailer but are exempt from the author match: Dependabot signs as
+  # `dependabot[bot] <support@github.com>` and authors as `…+dependabot[bot]@users.noreply.github.com`,
+  # so a strict match blocks every dependency PR.
+  case "$author" in *"[bot]"*) continue ;; esac
+  if ! printf '%s\n' "$signers" | grep -qiF "<$author>"; then
+    echo "FAIL $(git rev-parse --short "$sha")  sign-off does not match author <$author> — $subject"
+    bad=$((bad + 1))
+  fi
+done <<< "$commits"
+
+if [ "$bad" -gt 0 ]; then
+  echo "DCO: $bad of $n commit(s) not signed off. Fix: git commit -s --amend --no-edit, or git rebase --signoff BASE" >&2
+  exit 1
+fi
+echo "DCO: all $n commit(s) signed off"
+```
+
+```yaml
+  dco:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@<sha of the exact tag> # vX.Y.Z   # resolve it; do not type it
+        with:
+          fetch-depth: 0            # the script needs both PR endpoints; a shallow clone exits 2
+          persist-credentials: false
+      - env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: scripts/check-dco.sh "$BASE_SHA" "$HEAD_SHA"
+```
+
+The refs go through `env:` rather than being interpolated into the command line — the shape the
+workflow-injection guidance asks for, even though both are SHAs GitHub computes.
+
+Proven locally against a scratch repository: unsigned → 1; signed → 0; signer differing from author → 1;
+bot with a different signer → 0; bot with no trailer → 1; a case-differing email → 0; a merge commit
+exempt; an unresolvable base → 2 (so a shallow clone fails instead of passing on zero commits).
+Not yet run as a GitHub Actions job.
+
 ## Outputs
 
 This skill produces/updates:
 - [ ] All `uses:` in `.github/workflows/*` SHA-pinned with `# vX.Y.Z` comments (grep for `@v[0-9]`/`@main` returns nothing except the SLSA generator)
+- [ ] `scripts/check-action-pins.sh` and an `action-pins` CI job: every pin's comment is the tag its SHA really is
+- [ ] (DCO projects) `scripts/check-dco.sh` and a `dco` PR job
 - [ ] Top-level `permissions:` (read-only default) on every workflow, with narrow per-job elevation
 - [ ] `persist-credentials: false` on release/Scorecard checkouts
 - [ ] Verified/pinned toolchain installs; no `curl | sh`, no `version: latest`
@@ -287,6 +481,8 @@ This skill produces/updates:
 ```bash
 # No mutable action refs remain (SLSA generator is the only allowed tag ref):
 grep -rnE 'uses:.*@(v[0-9]|main|master|latest)' .github/workflows/ | grep -v slsa-github-generator
+# Every pin's comment is true (expect exit 0; exit 2 means it did not run, which is a failure):
+scripts/check-action-pins.sh
 # Every workflow declares permissions:
 for f in .github/workflows/*.yml; do grep -q '^permissions:' "$f" || echo "MISSING permissions: $f"; done
 # No unverified remote installs:

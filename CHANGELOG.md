@@ -8,6 +8,30 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.38] - 2026-11-13
+
+### Added
+
+- **`harden-github-actions` Step 2b: audit the pin labels** (roadmap H25). Ships
+  `check-action-pins.sh`, which resolves each `# <tag>` comment and fails when the tag is not the
+  pinned SHA; exits 2, not 0, when it cannot run or finds no `uses:`. Run against live GitHub tags:
+  correct → 0, the Dependabot case (a `v3.6.0` SHA labelled `v4.2.2`) → 1, mutable tag → 1, no
+  comment → 1, unresolvable tag → 1, no `uses:` → 2, `gh` absent → 2. Not yet run as an Actions job.
+- **`harden-github-actions` Step 8b and `setup-git-hooks`: DCO enforcement** (H27). A `commit-msg`
+  gate that rejects an unsigned commit rather than appending the trailer (git's FAQ explains why
+  `commit.signoff` does not exist), and a pull-request job running `check-dco.sh`, which matches
+  signer to author, exempts bots from the match but not the trailer, and exempts merge commits.
+  Tested in scratch repositories (hook through `lefthook run commit-msg`); the PR job has not been
+  run in Actions.
+
+### Changed
+
+- **`harden-github-actions` Step 2: corrected a sentence that presented a hazard as a benefit.**
+  It said Dependabot preserves the `# vX.Y.Z` comment when it bumps a SHA. Preserved comments go
+  stale across a major — Dependabot moved a pin from a `v3` SHA to the SHA of `v4.37.6` and kept
+  `# v3` — and the diff looks like a normal bump. The step now recommends an exact patch tag over a
+  floating major and makes SHA resolution mandatory rather than illustrative (H15b).
+
 ## [0.1.37] - 2026-11-13
 
 ### Added
