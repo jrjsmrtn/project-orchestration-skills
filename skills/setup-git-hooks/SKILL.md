@@ -3,7 +3,7 @@ name: setup-git-hooks
 description: Configure two-stage git hooks (pre-commit + pre-push) for quality automation, with either pre-commit or lefthook as the hook manager. Use after bootstrap-project and setup-adrs, when adding quality gates to an existing project, or when standardizing quality automation.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.36"
+  version: "0.1.37"
 license: MIT
 ---
 
@@ -401,6 +401,118 @@ without naming a path — *"fixed both call sites"* when one edit no-op'd. No ho
 practice is to re-read the message against `git diff --cached` rather than against your intent, and
 the hook only removes the most mechanical slice of the problem.
 
+#### A gate whose tool is missing must fail, not skip
+
+**A gate that cannot run must fail.** The natural template does the opposite:
+
+```bash
+if command -v luacheck >/dev/null; then luacheck .; else echo "luacheck not installed — skipping"; fi
+```
+
+That exits 0, and lefthook renders exit 0 as a green `✔️` — **indistinguishable from a clean run**.
+Measured on lefthook 2.2.2 with `luacheck` off `PATH`: the skipping gate printed `✔️ silent` and the
+push proceeded; the failing gate printed `✗ luacheck not found` and lefthook exited 1. On a machine
+that never had the tool, the skipping form reports success indefinitely, and the person reading
+`✔️` believes a scan ran. Same reasoning as the `gitleaks` hook in the canonical QA baseline: a gate
+that quietly does nothing is worse than no gate, because it is trusted.
+
+Source one helper from every gate script, and call it before the tool:
+
+```bash
+# scripts/need.sh
+# Source from any gate script:  . scripts/need.sh
+# need TOOL GATE INSTALL-HINT — fail the gate when its tool is absent; never skip.
+need() {
+  command -v "$1" >/dev/null 2>&1 && return 0
+  {
+    echo "✗ $1 not found: the $2 gate cannot run, so this is BLOCKED, not skipped."
+    echo "  install: $3"
+    echo "  deliberate override (this one time): --no-verify"
+  } >&2
+  exit 1
+}
+```
+
+```bash
+#!/usr/bin/env bash
+# .lefthook/pre-push/gates.sh
+. "$(dirname "$0")/../../scripts/need.sh"
+need luacheck lint "luarocks install luacheck"
+need stylua   format "cargo install stylua"
+luacheck . && stylua --check .
+```
+
+`--no-verify` is the deliberate override, named in the message so bypassing is a decision rather
+than an accident. A project that must not block contributors who lack a *non-essential* tool should
+say so in `quality-configuration.md` and enforce that check in CI instead — it should not skip it
+quietly in the hook.
+
+**Verify it by taking the tool away.** A gate that has only ever been observed passing is unproven.
+Run the hook with the tool off `PATH` and require a non-zero exit **and** the message:
+
+```bash
+# lefthook itself must stay reachable; everything else is stripped.
+mkdir -p /tmp/bare && ln -sf "$(command -v lefthook)" /tmp/bare/lefthook
+PATH=/tmp/bare:/usr/bin:/bin lefthook run pre-push
+echo "exit $?"        # expect non-zero, and "not found … BLOCKED" in the output
+```
+
+If the exit is 0, a silent-skip form is still in the config: `grep -rnE 'skipping|not installed' .lefthook* lefthook.yml scripts`.
+
+#### Pinned lint tools: a local binary or a container
+
+Contributors and CI may each have neither, one, or the other, at differing versions. A target
+hard-coded to `podman run` fails where there is no container runtime; one hard-coded to a local
+binary fails where it is absent; and preferring a local binary *of any version* lets the hook and CI
+disagree (`validate-quality-config` Step 6b). Select the runner in a fixed order:
+
+1. a **local binary, only if its version equals the pin**;
+2. else the **pinned container**, `podman` first, then `docker` (`CONTAINER_RUNTIME` overrides);
+3. else **fail**, naming both ways out. Never fall back to a local binary at the wrong version.
+
+```bash
+# scripts/pinned-tool.sh
+#!/usr/bin/env bash
+# Run a lint tool at its PINNED version: a local binary only if its version matches,
+# else the pinned container, else fail naming both ways out.
+#   usage: pinned-tool.sh TOOL VERSION IMAGE [ARGS...]
+#   e.g.:  pinned-tool.sh reuse 6.2.0 docker.io/fsfe/reuse lint
+# CONTAINER_RUNTIME overrides the search order (default: podman, then docker).
+set -u
+tool=$1 version=$2 image=$3
+shift 3
+
+if command -v "$tool" >/dev/null 2>&1; then
+  # First dotted number in the tool's version output; adjust the flag for tools that
+  # spell it differently (`go version`, `-V`). Compared for EQUALITY, never >=.
+  have=$("$tool" --version 2>&1 | grep -oE '[0-9]+(\.[0-9]+)+' | head -n1)
+  [ "$have" = "$version" ] && exec "$tool" "$@"
+  echo "note: local $tool is ${have:-of unknown version}, pin is $version — not using it" >&2
+fi
+
+for rt in ${CONTAINER_RUNTIME:-podman docker}; do
+  command -v "$rt" >/dev/null 2>&1 || continue
+  # Assumes the image's ENTRYPOINT is the tool; if not, put the tool name first in ARGS.
+  exec "$rt" run --rm -v "$PWD:/data" -w /data "$image:$version" "$@"
+done
+
+echo "error: $tool $version is required and neither is available." >&2
+echo "  install it locally at exactly $version, or install a container runtime (podman or docker)." >&2
+exit 1
+```
+
+Call it from the Makefile, the hook and CI alike, so all three name the same pin:
+
+```makefile
+reuse-lint:
+	scripts/pinned-tool.sh reuse 6.2.0 docker.io/fsfe/reuse lint
+```
+
+Two limits. The version is compared for **equality**, because a newer tool is what makes a gate
+disagree with CI. And `--version` output and image entrypoints vary by tool: run the script once
+per tool before trusting it. Verified with stub tools for each branch (matching local, wrong local,
+podman, docker only, both, neither, `CONTAINER_RUNTIME` override); the real images were not pulled.
+
 #### lefthook: pre-push gates belong in `scripts:`, not `commands:`
 
 **A repository with more than one remote silently loses its pre-push gates on every remote
@@ -441,7 +553,7 @@ pre-push:
 ```
 
 with the checks in `.lefthook/pre-push/gates.sh`, each guarded so a missing tool **fails**
-rather than passes quietly.
+rather than passes quietly — see "A gate whose tool is missing must fail, not skip" above.
 
 This is also the more honest shape. Pre-push gates are typically whole-repo checks — a full
 test run, a type check, a dependency audit — that never needed a file set, so scoping them
@@ -834,6 +946,7 @@ This skill creates:
 - [ ] `.git/hooks/pre-commit` (installed by hook framework)
 - [ ] `.git/hooks/pre-push` (installed by hook framework)
 - [ ] `.git/hooks/pre-push-remote-check` (optional, for multi-remote)
+- [ ] `scripts/need.sh` (a missing tool fails the gate) and, where a lint tool is pinned, `scripts/pinned-tool.sh`
 - [ ] `{:mix_audit, ...}` added to `mix.exs` deps (Elixir CVE-audit prerequisite)
 - [ ] Dependency audit enforced in a CI `audit` job (not hook-only) + scheduled re-run
 - [ ] Ecosystem lockfile committed; frozen/locked installs in CI + containers
@@ -852,6 +965,9 @@ lefthook run pre-commit          # or: pre-commit run --all-files
 
 # Test Stage 2 (pre-push)
 lefthook run pre-push            # or: pre-commit run --all-files --hook-stage pre-push
+
+# Prove each gate can fail: run it with its tool off PATH (see "A gate whose tool is missing")
+PATH=/tmp/bare:/usr/bin:/bin lefthook run pre-push; echo "exit $?"   # expect non-zero
 
 # Verify timing
 time lefthook run pre-commit     # Should be <30s

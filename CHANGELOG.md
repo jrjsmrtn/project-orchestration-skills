@@ -8,6 +8,26 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.37] - 2026-11-13
+
+### Added
+
+- **`setup-git-hooks`: a gate whose tool is missing must fail, not skip** (roadmap H26). The
+  natural `if command -v X; then X; else echo skipping; fi` exits 0, and lefthook renders that as
+  a green tick. Measured on lefthook 2.2.2 with the tool off `PATH`: the skipping gate printed
+  `✔️` and the hook exited 0; the fail-loud gate exited 1. Ships a `need` helper and a
+  verification — run the hook with the tool off `PATH` and require a non-zero exit — tested
+  through both lefthook's `commands:` and `scripts:` forms.
+- **`setup-git-hooks`: runner selection for a pinned lint tool** (H29) — a local binary only if
+  its version equals the pin, else the pinned container (podman, then docker), else fail naming
+  both routes. Ships `pinned-tool.sh`, tested with stub tools for each branch; the real images
+  were not pulled.
+- **`validate-quality-config` Step 6b: lint-tool pins are exact and identical everywhere** (H28).
+  Step 5 checked that the same checks run locally and in CI, not the same *version*; the
+  dangerous direction is passes-CI-fails-locally, because CI gates the merge and the lenient side
+  wins. Ships `check-tool-pins.sh`, which exits 2 rather than 0 when it finds no pin, and was
+  run against a fixture of the observed `fsfe/reuse:5` vs `6.2.0` case.
+
 ## [0.1.36] - 2026-11-03
 
 ### Removed

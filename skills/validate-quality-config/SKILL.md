@@ -3,7 +3,7 @@ name: validate-quality-config
 description: Validate consistency across quality configuration files. Use after setup-git-hooks, when debugging "works locally, fails in CI" issues, before major releases, or when onboarding.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.36"
+  version: "0.1.37"
 license: MIT
 ---
 
@@ -43,6 +43,9 @@ Language manifest  →  toolchain FLOOR   (go.mod, Cargo.toml, pyproject.toml, p
 CI config          →  toolchain BUILD   (go-version:, python-version:, node-version:, matrix)
                       these must NOT be the same value
 ```
+
+**Also validated**: that every lint, format and compliance tool is pinned to one **exact**
+version, identical in the hooks, the Makefile and CI (Step 6b).
 
 **Also validated**: that the toolchain **floor** (language manifest) and **build version** (CI)
 are deliberately *different*, and that only the floor-compatibility job reads the manifest. This is
@@ -217,6 +220,88 @@ The reference document should record all of this per call site. If it does not, 
 nowhere to be noticed: a partial fix that updates the obvious workflows and misses a scheduled
 scan looks identical to a complete one.
 
+### Step 6b: Validate Lint-Tool Pins — Exact, and the Same Everywhere
+
+Step 5 checks that the same *checks* run locally and in CI. It does not check that they run the same
+*version* of the tool, and that is the quieter failure.
+
+**The dangerous direction is the inverse of the skill's headline.** "Works locally, fails in CI" is
+loud and gets fixed. **Passes CI, fails locally** is not: CI gates the merge, so whichever side is
+more lenient wins by default. Observed: CI ran `fsfe/reuse:5` (a floating major) while a contributor
+had `reuse` 6.2.0; **CI passed a tree that 6.2.0 rejects**, so the licence gate had been the more
+lenient one all along and a non-compliant tree went green. A floating tag lets the two sides drift
+apart with no commit to show it.
+
+Assert, for every lint, format and compliance tool the project runs:
+
+- every pin is an **exact** version — not a major (`:5`), a minor (`:5.1`), `latest`, or absent;
+- every place that names the tool (hook config, Makefile, scripts, CI) names the **same** version.
+
+Create `scripts/check-tool-pins.sh` and run it with the tool names:
+
+```bash
+# scripts/check-tool-pins.sh
+#!/usr/bin/env bash
+# Every pin of a lint/format/compliance tool must be EXACT, and every place must agree.
+#   usage: scripts/check-tool-pins.sh TOOL [TOOL...]     e.g.  check-tool-pins.sh reuse hadolint
+# Exit: 0 all pins exact and identical | 1 floating or differing pins | 2 no pin found for a tool
+# (2, not 0, when nothing matches: a checker that finds nothing has checked nothing.)
+set -u
+files=$( { ls .lefthook.yml lefthook.yml Makefile justfile .gitlab-ci.yml 2>/dev/null
+           find scripts .lefthook .github/workflows -type f 2>/dev/null; } | sort -u )
+rc=0
+for tool in "$@"; do
+  t=${tool//./\\.}
+  # forms read:  tool:1.2.3   tool==1.2.3   tool@v1.2.3   and the space form  tool 1.2.3
+  ver="((:|==|@)v?[A-Za-z0-9][A-Za-z0-9._-]*|[[:space:]]+v?[0-9][0-9.]*)"
+  re="(^|[^A-Za-z0-9_-])${t}${ver}"
+  # shellcheck disable=SC2086   # $files is a newline list of plain paths
+  hits=$(grep -nHE "$re" $files 2>/dev/null | grep -v 'uses:' || true)   # action pins: harden-github-actions
+  if [ -z "$hits" ]; then
+    echo "✗ $tool: no version pin found anywhere — unpinned, or a form this check does not read" >&2
+    [ $rc -lt 2 ] && rc=2; continue
+  fi
+  versions=""
+  while IFS= read -r line; do
+    v=$(printf '%s' "$line" | grep -oE "${t}${ver}" | head -n1 | sed -E "s/^${t}(:|==|@|[[:space:]]+)v?//")
+    if printf '%s' "$v" | grep -qE '^[0-9]+(\.[0-9]+){2,}'; then
+      versions="$versions $v"
+    else
+      echo "✗ $tool: floating pin '$v' — $(printf '%s' "$line" | cut -d: -f1,2)" >&2; rc=1
+    fi
+  done <<< "$hits"
+  distinct=$(printf '%s\n' $versions | sort -u | grep -c . || true)
+  if [ "$distinct" -gt 1 ]; then
+    echo "✗ $tool: $distinct different exact versions in use: $(printf '%s\n' $versions | sort -u | tr '\n' ' ')" >&2; rc=1
+  elif [ "$distinct" -eq 1 ] && [ $rc -eq 0 ]; then
+    echo "✓ $tool: pinned to $(printf '%s\n' $versions | sort -u) everywhere"
+  fi
+done
+exit $rc
+```
+
+```bash
+scripts/check-tool-pins.sh reuse hadolint gitleaks   # expect "✓ … pinned to X everywhere" for each
+```
+
+It reads `tool:1.2.3`, `tool==1.2.3`, `tool@1.2.3` and the space form `tool 1.2.3` (the form
+`setup-git-hooks`' `pinned-tool.sh` uses), in the hook config, `Makefile`/`justfile`, `scripts/`
+and CI files. It deliberately does **not** read `uses:` lines (action pins belong to
+`harden-github-actions`) or `.pre-commit-config.yaml`'s `rev:` (pre-commit requires one, but it sits
+on a different line from the repo name). It reports only the first pin on a line. Where a tool is
+pinned in a form it cannot read, it exits **2 — not 0**, because a checker that finds nothing has
+checked nothing.
+
+Report as findings:
+
+- **Error** — a floating or missing pin, or two different exact versions.
+- **Error** — exit 2: the tool is not pinned anywhere this check can see.
+
+Proven against a fixture before it was written down: the observed `:5` vs `6.2.0` case → exit 1;
+two exact versions that differ (`6.1.0` vs `6.2.0`) → exit 1; `latest` → exit 1; a tool pinned
+nowhere → exit 2; a consistent pin, including through `pinned-tool.sh`, with an SHA-pinned
+`uses:` line present → exit 0.
+
 ### Step 7: Validate Version Consistency
 
 The declared version must agree across every file that states it. Drift here is a real, common defect (e.g. a README badge or `SECURITY.md` left behind while the manifest moved on).
@@ -325,6 +410,14 @@ if [ -n "$floor" ]; then
   fi
 fi
 
+# Lint-tool pins: exact, and the same on both sides (Step 6b). List the project's tools.
+# Capture the status itself -- under `set -e` a bare failing call would abort the script
+# before the report. Any non-zero (1 floating/differing, 2 nothing found) is an error.
+if [ -x scripts/check-tool-pins.sh ]; then
+  scripts/check-tool-pins.sh reuse gitleaks && rc=0 || rc=$?
+  if [ "$rc" -ne 0 ]; then errors=$((errors + 1)); fi
+fi
+
 # Add technology-specific checks here based on project type
 
 echo ""
@@ -345,6 +438,7 @@ fi
 
 This skill produces:
 - [ ] Validation report (stdout)
+- [ ] Lint-tool pin check: exact versions, identical everywhere (`scripts/check-tool-pins.sh`)
 - [ ] Version-consistency check across manifest / README / CHANGELOG / SECURITY.md
 - [ ] (Optional) `scripts/validate-quality-config.sh` for automation
 
@@ -384,12 +478,13 @@ The skill has done its job when:
 - The reference document `docs/reference/quality-configuration.md` is found (or its absence is reported as an error and the run stops)
 - Each canonical value (indent style/size, line length, EOL) is compared against every downstream config, and mismatches are flagged
 - Pre-commit hooks are confirmed to be a subset of the CI checks (linting, type checking, and tests all present in CI)
+- Every lint, format and compliance tool is pinned to one exact version, identical across hooks, Makefile and CI (`scripts/check-tool-pins.sh` exits 0; exit 2 is a failure, not a pass)
 - The declared version is confirmed identical across the package manifest, `README.md`, `CHANGELOG.md`, and `SECURITY.md`
 - The validation report exits non-zero when any hard mismatch is found
 
 ## Related Skills
 
-- `setup-git-hooks` - Creates the configs this validates
+- `setup-git-hooks` - Creates the configs this validates; also owns `pinned-tool.sh`, the runner that keeps a local binary from running at a version other than the pin
 - `setup-adrs` - Documents quality practices in an ADR
 
 > **Pattern Reference**: See [CONSISTENT-QUALITY-GATES](https://github.com/jrjsmrtn/ai-assisted-project-orchestration/blob/develop/docs/patterns/quality/consistent-quality-gates.md)
