@@ -248,3 +248,55 @@ pre-commit:
 
         print(f"✓ version lockstep: {declared} across {len(skills)} skill(s)")
         LOCKSTEP
+
+    # Shell scripts must lint, and the shipped ones must stay formatted.
+    #
+    # The check scripts these plugins ship decide whether other people's projects pass, so they
+    # are held to the standard they enforce. shellcheck runs at --severity=warning: errors and
+    # warnings block, info and style notes do not (the suites' runner variable, "/bin/bash script",
+    # is unquoted on purpose, and quoting it would break them). shfmt -d runs in the portfolio style,
+    # -i 2 -ci -bn, on the shipped scripts only: the test files are deliberately dense one-liners
+    # and shfmt would roughly double them, so they are linted but not reformatted.
+    #
+    # Reads the STAGED files ({staged_files}), so it gates what is being committed. Inert where
+    # there is nothing to check: most plugin repos ship no shell script.
+    #
+    # Scope is by PATH, not by content: scripts/*.sh, skills/*/scripts/*.sh and tests/*.sh. A shell
+    # script anywhere else is not checked -- add its path to the globs rather than assume it is.
+    #
+    # Fail-open if the tool is absent, for the same contributor reason as plugin-validate.
+    shellcheck:
+      glob:
+        - "scripts/*.sh"
+        - "skills/*/scripts/*.sh"
+        - "tests/*.sh"
+      run: |
+        if ! command -v shellcheck >/dev/null 2>&1; then
+          echo "⚠️  shellcheck not found — shell lint SKIPPED"
+          exit 0
+        fi
+        shellcheck --severity=warning {staged_files} || {
+          echo ""
+          echo "⚠️  shellcheck found errors or warnings in staged shell scripts."
+          echo "    To bypass (NOT recommended): git commit --no-verify"
+          exit 1
+        }
+        echo "✓ shellcheck: no errors or warnings"
+
+    shfmt:
+      glob:
+        - "scripts/*.sh"
+        - "skills/*/scripts/*.sh"
+      run: |
+        if ! command -v shfmt >/dev/null 2>&1; then
+          echo "⚠️  shfmt not found — shell format check SKIPPED"
+          exit 0
+        fi
+        shfmt -d -i 2 -ci -bn {staged_files} || {
+          echo ""
+          echo "⚠️  staged shell scripts are not formatted. Fix with:"
+          echo "      shfmt -w -i 2 -ci -bn <file>"
+          echo "    To bypass (NOT recommended): git commit --no-verify"
+          exit 1
+        }
+        echo "✓ shfmt: formatted"
