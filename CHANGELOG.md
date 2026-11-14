@@ -8,6 +8,21 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+### Fixed
+
+- **The test suites could run in the directory they were started from.** Each suite makes a scratch directory with
+  `T=$(mktemp -d); cd "$T"` and then runs `git init`, `git commit`, `git reset --hard` and `git clean -fd` there.
+  If `mktemp` printed nothing, `cd ""` succeeds under the macOS `/bin/bash` 3.2 (the suites' runner; bash 5 fails
+  it), so they carried on in the invoking directory. A single `scratch` helper now exits unless `mktemp` succeeds
+  and the directory exists. The same pattern in pm's release suite, run in a decoy repository with an empty
+  `mktemp`, wrote its fixtures there and made a commit that swept in the uncommitted work; with the helper, all
+  six suites that use it (adrs, bootstrap, containerfile, gitlab, hygiene, tool-pins) exit 1 and leave the decoy
+  untouched, for an empty `mktemp`; two of them were also tried with a failing one.
+- Ten `shellcheck` warnings in the test files (unguarded `cd`, an unused loop variable, an unquoted `$(...)`)
+  are cleared; `shellcheck --severity=warning` now reports nothing on `tests/*.sh`. Notes remain, mostly the
+  unquoted runner variable the suites rely on to run `"/bin/bash script"`.
+
+
 ## [0.1.48] - 2026-11-14
 
 ### Changed

@@ -16,8 +16,14 @@ t() {
     echo "$out" | head -6 | sed 's/^/      /'
   }
 }
-T=$(mktemp -d)
-cd "$T" || exit 1
+# scratch: a fresh temporary directory, entered. Refuses to continue anywhere else: an empty $T makes `cd ""`
+# succeed in bash 3.2, and these suites run `git reset --hard` and `git clean -fd`.
+scratch() {
+  T=$(mktemp -d) || exit 1
+  [ -d "$T" ] || exit 1
+  cd "$T" || exit 1
+}
+scratch
 mkdir -p scripts .github/workflows
 reset() {
   rm -rf lefthook.yml Makefile justfile .gitlab-ci.yml .lefthook scripts .github

@@ -4,9 +4,16 @@ K=$1; fails=0
 t(){ name=$1; want=$2; pat=$3; shift 3; out=$("$@" 2>&1); rc=$?; res=PASS; [ $rc -eq $want ] || res="BAD-RC($rc)"
   if [ "${pat:0:1}" = "!" ]; then echo "$out" | grep -qE "${pat:1}" && res="$res+UNEXPECTED-MATCH"; else echo "$out" | grep -qE "$pat" || res="$res+MISSING-MATCH"; fi
   echo "$res  $name"; [ "$res" = PASS ] || { fails=$((fails+1)); echo "$out" | grep -E '^(FAIL|WARN|        )' | head -5 | sed 's/^/      /'; }; }
-T=$(mktemp -d); cd "$T"; git init -q -b main; mkdir -p docs/adr
+# scratch: a fresh temporary directory, entered. Refuses to continue anywhere else: an empty $T makes `cd ""`
+# succeed in bash 3.2, and these suites run `git reset --hard` and `git clean -fd`.
+scratch() {
+  T=$(mktemp -d) || exit 1
+  [ -d "$T" ] || exit 1
+  cd "$T" || exit 1
+}
+scratch; git init -q -b main; mkdir -p docs/adr
 adr(){ # n title status date
-  printf '# %s. %s\n\nDate: %s\n\n## Status\n\n%s\n\n## Context\n\nWe need X.\n\n## Decision\n\nWe will do Y.\n\n**Alternatives Considered**: Z was rejected.\n\n## Consequences\n\nFine.\n' "$1" "$2" "$4" "$3" > docs/adr/$(printf %04d $1)-$5.md; }
+  printf '# %s. %s\n\nDate: %s\n\n## Status\n\n%s\n\n## Context\n\nWe need X.\n\n## Decision\n\nWe will do Y.\n\n**Alternatives Considered**: Z was rejected.\n\n## Consequences\n\nFine.\n' "$1" "$2" "$4" "$3" > "docs/adr/$(printf %04d "$1")-$5.md"; }
 adr 1 "Record Architecture Decisions" Accepted 2026-01-02 record-architecture-decisions
 adr 2 "Adopt Development Best Practices" Accepted 2026-01-02 adopt-development-best-practices
 adr 3 "Use Go and Cobra" Accepted 2026-01-03 use-go-and-cobra
@@ -77,5 +84,5 @@ PY
 t "index omits a foundational ADR" 1 'does not list ADR-0002' $K; rs
 printf '# idx\n' > docs/adr/index.yml; t "index with no entries" 1 "no '- id:' entries" $K; rs
 cp docs/adr/0004-operations-best-practices.md docs/adr/0005-extra.md; sed -i.b 's/^# 4\./# 5./' docs/adr/0005-extra.md; t "unlisted non-foundational ADR is only a warning" 0 'WARN  index.yml does not list ADR-0005' $K; rs
-cd /; rm -rf "$T" "$snap"; mkdir -p /tmp/na-$$; cd /tmp/na-$$; t "no docs/adr" 1 'is not a directory' $K; mkdir -p docs/adr; t "empty docs/adr" 1 'no ADR files' $K; cd /; rm -rf /tmp/na-$$
+cd /; rm -rf "$T" "$snap"; mkdir -p /tmp/na-$$; cd /tmp/na-$$ || exit 1; t "no docs/adr" 1 'is not a directory' $K; mkdir -p docs/adr; t "empty docs/adr" 1 'no ADR files' $K; cd /; rm -rf /tmp/na-$$
 echo "failures: $fails"; exit $fails

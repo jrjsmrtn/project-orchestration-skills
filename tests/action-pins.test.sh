@@ -59,7 +59,7 @@ fx "repos/o/r/git/ref/tags/release/v1" "commit $A"
 fx "repos/o/r/git/ref/tags/blob1" "blob $A"
 fx "repos/o/r/git/ref/tags/short" "commit abc123"
 # a tag object that keeps pointing at tag objects: the loop must give up
-for i in 1 2 3 4 5 6; do fx "repos/o/r/git/ref/tags/chain" "tag $E"; done
+for _ in 1 2 3 4 5 6; do fx "repos/o/r/git/ref/tags/chain" "tag $E"; done
 fx "repos/o/r/git/tags/$E" "tag $E"
 fx "repos/o/other/git/ref/tags/v1.0.0" "commit $D"
 fx "repos/o/r/commits/v9" "$A"

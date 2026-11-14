@@ -4,7 +4,14 @@ K=$1; fails=0
 t(){ name=$1; want=$2; pat=$3; shift 3; out=$("$@" 2>&1); rc=$?; res=PASS; [ $rc -eq $want ] || res="BAD-RC($rc)"
   if [ "${pat:0:1}" = "!" ]; then echo "$out" | grep -qE "${pat:1}" && res="$res+UNEXPECTED-MATCH"; else echo "$out" | grep -qE "$pat" || res="$res+MISSING-MATCH"; fi
   echo "$res  $name"; [ "$res" = PASS ] || { fails=$((fails+1)); echo "$out" | grep -E '^(FAIL|note)' | head -5 | sed 's/^/      /'; }; }
-T=$(mktemp -d); cd "$T"; git init -q -b main; git config user.email t@example.com; git config user.name t; git config commit.gpgsign false; git config core.hooksPath /dev/null
+# scratch: a fresh temporary directory, entered. Refuses to continue anywhere else: an empty $T makes `cd ""`
+# succeed in bash 3.2, and these suites run `git reset --hard` and `git clean -fd`.
+scratch() {
+  T=$(mktemp -d) || exit 1
+  [ -d "$T" ] || exit 1
+  cd "$T" || exit 1
+}
+scratch; git init -q -b main; git config user.email t@example.com; git config user.name t; git config commit.gpgsign false; git config core.hooksPath /dev/null
 printf '.env\n.env.*\n!.env.example\n.envrc\n.envrc.local\n*.pem\n*.key\ncredentials.json\nsecrets.yaml\nCLAUDE.local.md\n' > .gitignore
 printf '[project]\nname="p"\n' > pyproject.toml; echo l > uv.lock
 echo 'defmodule M do end' > mix.exs; echo l > mix.lock
@@ -58,6 +65,6 @@ printf 'default:\n  script:\n    - cargo build\n' > .gitlab-ci.yml; git add -A; 
 git rm -q Cargo.lock Cargo.toml; sed -i.b 's/cargo build --locked/cargo build/' .github/workflows/ci.yml; git commit -qam x; t "unlocked cargo is ignored when there is no Cargo project" 0 '!cargo build without' $K; rs
 printf '    - run: cargo build  # --locked would go here\n' >> .github/workflows/ci.yml; t "a flag mentioned only in a trailing comment still exempts (known limit)" 0 '!FAIL' $K; rs
 cd /; rm -rf "$T"; mkdir -p /tmp/nh-$$ && cd /tmp/nh-$$ && t "not a git repo" 1 'not inside a git' $K; cd /; rmdir /tmp/nh-$$
-T=$(mktemp -d); cd "$T"; git init -q -b main; git config user.email t@example.com; git config user.name t; git config core.hooksPath /dev/null; printf '.env\n.env.*\n!.env.example\n.envrc\n.envrc.local\n*.pem\n*.key\ncredentials.json\nsecrets.yaml\nCLAUDE.local.md\n' > .gitignore; echo r > README.md; git add -A; git commit -qm i
+scratch; git init -q -b main; git config user.email t@example.com; git config user.name t; git config core.hooksPath /dev/null; printf '.env\n.env.*\n!.env.example\n.envrc\n.envrc.local\n*.pem\n*.key\ncredentials.json\nsecrets.yaml\nCLAUDE.local.md\n' > .gitignore; echo r > README.md; git add -A; git commit -qm i
 t "no manifest and no CI: notes only" 0 'no pyproject.toml.*no lockfile to check' $K; t "...and says frozen installs were not checked" 0 'no CI workflow or Containerfile' $K; cd /; rm -rf "$T"
 echo "failures: $fails"; exit $fails

@@ -4,7 +4,14 @@ K=$1; fails=0; D64=$(printf '0%.0s' $(seq 64)); S40=$(printf 'a%.0s' $(seq 40))
 t(){ name=$1; want=$2; pat=$3; shift 3; out=$("$@" 2>&1); rc=$?; res=PASS; [ $rc -eq $want ] || res="BAD-RC($rc)"
   if [ "${pat:0:1}" = "!" ]; then echo "$out" | grep -qE "${pat:1}" && res="$res+UNEXPECTED-MATCH"; else echo "$out" | grep -qE "$pat" || res="$res+MISSING-MATCH"; fi
   echo "$res  $name"; [ "$res" = PASS ] || { fails=$((fails+1)); echo "$out" | head -6 | sed 's/^/      /'; }; }
-T=$(mktemp -d); cd "$T"
+# scratch: a fresh temporary directory, entered. Refuses to continue anywhere else: an empty $T makes `cd ""`
+# succeed in bash 3.2, and these suites run `git reset --hard` and `git clean -fd`.
+scratch() {
+  T=$(mktemp -d) || exit 1
+  [ -d "$T" ] || exit 1
+  cd "$T" || exit 1
+}
+scratch
 w(){ cat > .gitlab-ci.yml; }
 w <<Y
 include:

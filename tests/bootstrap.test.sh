@@ -4,7 +4,14 @@ K=$1; fails=0
 t(){ name=$1; want=$2; pat=$3; shift 3; out=$("$@" 2>&1); rc=$?; res=PASS; [ $rc -eq $want ] || res="BAD-RC($rc)"
   if [ "${pat:0:1}" = "!" ]; then echo "$out" | grep -qE "${pat:1}" && res="$res+UNEXPECTED-MATCH"; else echo "$out" | grep -qE "$pat" || res="$res+MISSING-MATCH"; fi
   echo "$res  $name"; [ "$res" = PASS ] || { fails=$((fails+1)); echo "$out" | grep -E '^(FAIL|note)' | head -5 | sed 's/^/      /'; }; }
-T=$(mktemp -d); cd "$T"; git init -q -b main; git config user.email t@example.com; git config user.name t; git config core.hooksPath "$T/.git/hooks"; git config commit.gpgsign false
+# scratch: a fresh temporary directory, entered. Refuses to continue anywhere else: an empty $T makes `cd ""`
+# succeed in bash 3.2, and these suites run `git reset --hard` and `git clean -fd`.
+scratch() {
+  T=$(mktemp -d) || exit 1
+  [ -d "$T" ] || exit 1
+  cd "$T" || exit 1
+}
+scratch; git init -q -b main; git config user.email t@example.com; git config user.name t; git config core.hooksPath "$T/.git/hooks"; git config commit.gpgsign false
 mkdir -p docs/adr docs/tutorials docs/howto docs/reference docs/explanation docs/architecture docs/sprints docs/roadmap architecture .github
 cat > CLAUDE.md <<'Y'
 # P
@@ -109,5 +116,5 @@ PY
 t "public: Scope too short" 1 'under 20 words' $K; rs
 sed -i.b 's/## Supported Versions/## Supported {latest-minor}/' SECURITY.md; t "public: leftover {placeholder}" 1 'template placeholders' $K; rs
 sed -i.b 's/\*\*Distribution profile\*\*: Public/**Distribution profile**: Private/' CLAUDE.md; t "private profile: SECURITY.md not required" 0 '!public' $K; rm SECURITY.md; t "private profile without SECURITY.md passes" 0 '!FAIL' $K; t "--public forces the check" 1 'SECURITY.md is missing' $K --public; rs
-cd /; rm -rf "$T"; mkdir -p /tmp/nb-$$; cd /tmp/nb-$$; t "not a git repo" 1 'not inside a git' $K t0; cd /; rmdir /tmp/nb-$$
+cd /; rm -rf "$T"; mkdir -p /tmp/nb-$$; cd /tmp/nb-$$ || exit 1; t "not a git repo" 1 'not inside a git' $K t0; cd /; rmdir /tmp/nb-$$
 echo "failures: $fails"; exit $fails
