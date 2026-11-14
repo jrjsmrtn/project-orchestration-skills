@@ -140,6 +140,7 @@ done
 
 # Fail closed if the file visibly mentions includes, images or services yet nothing was extracted:
 # the YAML shape was one this script does not read, and a clean result would be false.
+# shellcheck disable=SC2086   # $seen is a newline list of plain paths
 if [ "$checked" -eq 0 ] && grep -qE '^[[:space:]]*(include|image|services):' $seen; then
   echo "FAIL: $CONFIG mentions include:/image:/services: but none was extracted — pins NOT checked" >&2
   exit 2

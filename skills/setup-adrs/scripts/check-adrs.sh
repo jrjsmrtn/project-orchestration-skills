@@ -19,6 +19,17 @@ bad() {
   fail=1
 }
 warn() { echo "WARN  $*"; }
+# first_file PATH...: print the first argument that exists (a glob that matched nothing stays literal)
+first_file() {
+  local f
+  for f in "$@"; do
+    if [ -e "$f" ]; then
+      printf '%s\n' "$f"
+      return 0
+    fi
+  done
+  return 0
+}
 
 [ -d "$DIR" ] || {
   bad "$DIR is not a directory"
@@ -50,7 +61,7 @@ for f in "$DIR"/*.md; do
   fi
   n=${base:0:4}
   num=$((10#$n))
-  numbers="$numbers $num"
+  numbers="${numbers:+$numbers$'\n'}$num"
   title=""
   status=""
   # first line of content: skip blank lines and a leading HTML comment (an SPDX/REUSE header)
@@ -83,16 +94,16 @@ done
   bad "no ADR files in $DIR"
   exit 1
 }
-sorted=$(printf '%s\n' $numbers | sort -n)
-dups=$(printf '%s\n' $sorted | uniq -d | tr '\n' ' ')
-[ -z "$dups" ] && ok "ADR numbers are unique" || bad "duplicate ADR numbers: $dups"
-for want in 1 2 3; do printf '%s\n' $sorted | grep -qx "$want" || bad "ADR-$(printf %04d $want) is missing"; done
-max=$(printf '%s\n' $sorted | tail -1)
+sorted=$(printf '%s\n' "$numbers" | sort -n)
+dups=$(printf '%s\n' "$sorted" | uniq -d | tr '\n' ' ')
+if [ -z "$dups" ]; then ok "ADR numbers are unique"; else bad "duplicate ADR numbers: $dups"; fi
+for want in 1 2 3; do printf '%s\n' "$sorted" | grep -qx "$want" || bad "ADR-$(printf %04d $want) is missing"; done
+max=$(printf '%s\n' "$sorted" | tail -1)
 gaps=""
-for ((i = 1; i <= max; i++)); do printf '%s\n' $sorted | grep -qx "$i" || gaps="$gaps $(printf %04d $i)"; done
+for ((i = 1; i <= max; i++)); do printf '%s\n' "$sorted" | grep -qx "$i" || gaps="$gaps $(printf %04d $i)"; done
 [ -z "$gaps" ] || warn "gaps in the numbering:$gaps"
 
-f3=$(ls "$DIR"/0003-*.md 2>/dev/null | head -1)
+f3=$(first_file "$DIR"/0003-*.md)
 if [ -n "$f3" ]; then
   if grep -qiE 'alternative|options? considered|considered options' "$f3"; then
     ok "ADR-0003 mentions the alternatives considered"
@@ -101,9 +112,9 @@ fi
 
 cat=""
 [ -f CLAUDE.md ] && cat=$(sed -nE 's/.*\*\*Category\*\*: *([A-Za-z]+).*/\1/p' CLAUDE.md | head -1)
-f4=$(ls "$DIR"/0004-*.md 2>/dev/null | head -1)
+f4=$(first_file "$DIR"/0004-*.md)
 case "$cat" in
-  Infrastructure | Hybrid) [ -n "$f4" ] && ok "ADR-0004 exists (Category: $cat)" || bad "Category is $cat but ADR-0004 (operations) does not exist" ;;
+  Infrastructure | Hybrid) if [ -n "$f4" ]; then ok "ADR-0004 exists (Category: $cat)"; else bad "Category is $cat but ADR-0004 (operations) does not exist"; fi ;;
   Development) if [ -n "$f4" ] && grep -qiE '^# 4\. .*operations' "$f4"; then bad "Category is Development but ADR-0004 is an operations ADR"; fi ;;
   *) warn "CLAUDE.md states no Category: whether ADR-0004 is required was not checked" ;;
 esac

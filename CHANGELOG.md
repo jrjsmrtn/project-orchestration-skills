@@ -8,6 +8,29 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.48] - 2026-11-14
+
+### Changed
+
+- **The scripts under `skills/*/scripts/` pass `shellcheck` with no finding** (20 findings in five of them: one
+  warning, the rest notes). `check-containerfile.sh` no longer sets `user_line`, which nothing read. In
+  `check-adrs.sh` the ADR numbers are kept as a newline list instead of a space-separated one that was split by
+  leaving it unquoted, and `ls | head -1` became a glob. `check-tool-pins.sh` no longer relies on word splitting
+  for its version list. Five `A && B || C` chains became `if` / `else`, where `C` could have run when `B` failed.
+  Three unquoted newline lists of file names (`$hooks`, `$ci`, `$seen`) stay unquoted on purpose, each with a
+  `# shellcheck disable=SC2086` and its reason.
+- Checked two ways: every suite passes, and the old and new `check-adrs.sh`, `check-containerfile.sh`,
+  `check-bootstrap.sh` and `check-tool-pins.sh` give the same output and exit code on fifteen of the maintainer's
+  own projects. The first version of the `check-adrs.sh` change quoted the old space-separated list and broke eleven
+  cases; the suite caught it, and the fix is the newline list above.
+
+### Added
+
+- `tests/tool-pins.test.sh`: 16 cases for `check-tool-pins.sh`, which had none (exact and floating pins, differing
+  versions, the `==`, `@v`, `:` and space forms, `uses:` lines, a dot in a tool name, exit 2 when nothing is found).
+
+Not yet: `shellcheck` and `shfmt` are not in the hooks or in CI.
+
 ## [0.1.47] - 2026-11-14
 
 ### Fixed

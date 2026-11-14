@@ -157,8 +157,11 @@ if [ "$public" -eq 1 ]; then
   if [ ! -f SECURITY.md ]; then
     bad public "SECURITY.md is missing"
   else
-    grep -qE '^## Reporting a Vulnerability' SECURITY.md && ok public "SECURITY.md has '## Reporting a Vulnerability'" \
-      || bad public "SECURITY.md has no '## Reporting a Vulnerability' section"
+    if grep -qE '^## Reporting a Vulnerability' SECURITY.md; then
+      ok public "SECURITY.md has '## Reporting a Vulnerability'"
+    else
+      bad public "SECURITY.md has no '## Reporting a Vulnerability' section"
+    fi
     if grep -qE 'security/advisories/new|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]+' SECURITY.md; then
       ok public "SECURITY.md names a private reporting channel"
     else bad public "SECURITY.md names no private channel (a security/advisories/new link or an email address)"; fi

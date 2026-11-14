@@ -61,7 +61,6 @@ for f in $files; do
   gargs=""
   last_from=0
   user=""
-  user_line=0
   rootok=""
   nfrom=0
   n_fail_before=$fail
@@ -79,7 +78,6 @@ for f in $files; do
         nfrom=$((nfrom + 1))
         last_from=$n
         user=""
-        user_line=0
         rootok=""
         img=""
         alias=""
@@ -113,7 +111,6 @@ for f in $files; do
         ;;
       USER)
         user=$(printf '%s' "$text" | awk '{print $2}')
-        user_line=$n
         ;;
       RUN)
         if printf '%s' "$text" | grep -qE '(curl|wget)[^|;&]*\|[[:space:]]*(sudo[[:space:]]+)?(sh|bash|zsh|ash)([[:space:]]|;|&|$)|(sh|bash)[[:space:]]+-c[[:space:]]+["'"'"']?\$\([[:space:]]*(curl|wget)'; then
@@ -156,15 +153,17 @@ for d in . $(for f in $files; do dirname "$f"; done | sort -u); do
     if grep -qE '^/?\.git/?$' "$i" && grep -qE '^/?\.env(\*|\.\*)?$|^/?\.env\*$' "$i"; then ign=1; fi
   done
 done
-[ "$ign" -eq 1 ] && ok ".dockerignore/.containerignore excludes .git and .env" || bad "no .dockerignore or .containerignore that excludes both .git and .env"
+if [ "$ign" -eq 1 ]; then ok ".dockerignore/.containerignore excludes .git and .env"; else bad "no .dockerignore or .containerignore that excludes both .git and .env"; fi
 
 ci=$({ ls .github/workflows/*.yml .github/workflows/*.yaml .gitlab-ci.yml 2>/dev/null; })
 hooks=$({ ls lefthook.yml lefthook.yaml .lefthook.yml .pre-commit-config.yaml 2>/dev/null; })
+# shellcheck disable=SC2086   # $hooks and $ci are newline lists of plain paths, or empty
 if [ -n "$hooks$ci" ] && grep -qs hadolint $hooks $ci; then ok "hadolint is wired (hook or CI)"; else bad "hadolint appears in no lefthook/pre-commit config or CI file"; fi
 if [ -f .grype.yaml ] || [ -f .grype.yml ]; then ok ".grype.yaml present"; else bad ".grype.yaml is missing"; fi
+# shellcheck disable=SC2086   # $ci is a newline list of plain paths
 if [ -n "$ci" ] && grep -qs grype $ci; then ok "grype runs in CI"; else bad "grype appears in no CI file"; fi
 if [ -f .github/dependabot.yml ] || [ -f .github/dependabot.yaml ]; then
-  grep -qsE 'package-ecosystem:[[:space:]]*"?docker"?' .github/dependabot.y*ml && ok "dependabot has a docker ecosystem" || bad ".github/dependabot.yml has no docker ecosystem for digest bumps"
+  if grep -qsE 'package-ecosystem:[[:space:]]*"?docker"?' .github/dependabot.y*ml; then ok "dependabot has a docker ecosystem"; else bad ".github/dependabot.yml has no docker ecosystem for digest bumps"; fi
 fi
 
 exit "$fail"

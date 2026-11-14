@@ -32,12 +32,13 @@ for tool in "$@"; do
       rc=1
     fi
   done <<<"$hits"
-  distinct=$(printf '%s\n' $versions | sort -u | grep -c . || true)
+  uniq_versions=$(printf '%s\n' "$versions" | tr ' ' '\n' | grep . | sort -u || true)
+  distinct=$(printf '%s\n' "$uniq_versions" | grep -c . || true)
   if [ "$distinct" -gt 1 ]; then
-    echo "✗ $tool: $distinct different exact versions in use: $(printf '%s\n' $versions | sort -u | tr '\n' ' ')" >&2
+    echo "✗ $tool: $distinct different exact versions in use: $(printf '%s\n' "$uniq_versions" | tr '\n' ' ')" >&2
     rc=1
   elif [ "$distinct" -eq 1 ] && [ $rc -eq 0 ]; then
-    echo "✓ $tool: pinned to $(printf '%s\n' $versions | sort -u) everywhere"
+    echo "✓ $tool: pinned to $uniq_versions everywhere"
   fi
 done
 exit $rc
