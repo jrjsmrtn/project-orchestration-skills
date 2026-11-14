@@ -8,6 +8,27 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.43] - 2026-11-14
+
+### Added
+
+- **`setup-git-hooks` ships `check-hygiene.sh`** (roadmap H19, ADR-0009 rung 1). Step 3 said "ensure
+  `.gitignore` covers all secret-bearing files" and the lockfile rule said "add a pre-push/CI check that the
+  lockfile is present and committed"; neither shipped one. The script fails on a `.gitignore` that misses a
+  Step 3 pattern or ignores `.env.example`; on a manifest (`pyproject.toml`, `mix.exs`, `Cargo.toml`,
+  `package.json`) with no *committed* lockfile, including one that exists but is git-ignored; and on an
+  unfrozen install in CI files and Containerfiles (`uv sync`, `npm install`, `cargo build`, `mix deps.get`)
+  or a `COPY mix.lock*` glob. The `.gitignore` is judged by the file alone with the global excludes off.
+  26 fixture cases under bash 5 and 3.2. Its first version silently missed `cargo build` and `mix deps.get`
+  because `grep -vE '--locked'` reads the pattern as an option; the fixtures caught it. Run against 12 real
+  projects: two pass, and it found git-ignored lockfiles, unfrozen `mix deps.get` and the exact `COPY
+  mix.lock*` the skill warns about. Not yet run in CI or as a hook.
+
+### Changed
+
+- The lockfile rule is stricter than the old prose: a manifest with no committed lock fails whatever its
+  constraints say, instead of only when they are lower bounds.
+
 ## [0.1.42] - 2026-11-14
 
 ### Added
