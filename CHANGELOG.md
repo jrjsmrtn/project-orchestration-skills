@@ -8,6 +8,26 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.40] - 2026-11-14
+
+### Added
+
+- **`harden-gitlab-ci` Phase 2b: `check-gitlab-pins.sh`** (roadmap H19, ADR-0009 rung 1). The GitLab
+  sibling told the reader to "re-run the inventory and confirm nothing resolves to a moving target"
+  and shipped no check, where `harden-github-actions` has `check-action-pins.sh`. The script reads the
+  YAML with `yq` and fails on an unpinned `include: component` / `project` / `remote`, and on any
+  `image:` or `services:` without an `@sha256` digest; it follows `include: local` files and globs,
+  warns on an exact tag, fails on a `$VARIABLE` ref, and exits 2 when it cannot run or when it
+  extracted nothing from a file that visibly mentions includes or images. 28 fixture cases, plus the
+  extractor-returns-nothing case that caught a first version passing every faulty include silently.
+  Run against seven real configurations: all 14 `image:` lines a text search found were reported.
+  Not yet exercised on a real config that uses `include:`, nor as a GitLab CI job.
+
+### Changed
+
+- The Phase 1 pin greps are labelled exploratory. On a real configuration the image/service pattern
+  also matched an artifact's `name:`. Validation points at the script instead of three prose items.
+
 ## [0.1.39] - 2026-11-13
 
 ### Added

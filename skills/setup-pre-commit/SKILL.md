@@ -3,7 +3,7 @@ name: setup-pre-commit
 description: DEPRECATED — renamed to setup-git-hooks in 0.1.29. This skill should be used only to redirect; invoke setup-git-hooks instead for configuring two-stage git hooks (pre-commit + pre-push) with either pre-commit or lefthook.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.39"
+  version: "0.1.40"
 license: MIT
 ---
 
