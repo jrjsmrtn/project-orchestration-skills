@@ -3,7 +3,7 @@ name: harden-github-actions
 description: Harden GitHub Actions CI/CD workflows for supply-chain security — SHA-pin actions, least-privilege token permissions, verified toolchain installs, OpenSSF Scorecard, and SLSA provenance. Use when adding or auditing GitHub Actions workflows, before making a repository public, when a supply-chain review flags CI gaps, or when standardizing CI hardening across GitHub projects. GitHub-specific by design — GitLab CI and Forgejo Actions are out of scope.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.45"
+  version: "0.1.46"
 license: MIT
 ---
 
@@ -101,65 +101,7 @@ So:
 A pin's comment is a claim. This check resolves it: every `uses:` must be a 40-hex SHA, carry a tag
 comment, and that tag must resolve to that SHA.
 
-```bash
-# scripts/check-action-pins.sh
-#!/usr/bin/env bash
-# Every `uses: owner/repo@<sha> # <tag>` must pin a 40-hex commit SHA, and that SHA must be
-# the commit <tag> actually resolves to. A comment is a claim; this resolves it.
-#   usage: scripts/check-action-pins.sh [workflow-dir]        (default .github/workflows)
-# Exit: 0 all pins true | 1 unpinned, unlabelled or mislabelled | 2 could not run
-# (2, not 0, when it cannot run or finds no `uses:` — a checker that checked nothing passed nothing.)
-# Needs `gh` authenticated (GH_TOKEN in CI).
-set -u
-DIR="${1:-.github/workflows}"
-
-command -v gh >/dev/null 2>&1 || { echo "FAIL: gh not on PATH — pins NOT checked" >&2; exit 2; }
-gh auth status >/dev/null 2>&1 || { echo "FAIL: gh not authenticated (set GH_TOKEN in CI) — pins NOT checked" >&2; exit 2; }
-[ -d "$DIR" ] || { echo "FAIL: no workflow directory '$DIR'" >&2; exit 2; }
-
-# External actions only: skip local (./) and docker:// references, and the SLSA generator,
-# which must be tag-referenced (Step 7) and so can never be a SHA pin.
-lines=$(grep -rhE '^[[:space:]]*-?[[:space:]]*uses:' "$DIR" \
-  | sed -E 's/^[[:space:]]*-?[[:space:]]*uses:[[:space:]]*//' \
-  | grep -vE '^(\./|docker://|slsa-framework/slsa-github-generator/)' | sort -u)
-if [ -z "$lines" ]; then
-  echo "FAIL: no 'uses:' entries under $DIR — wrong path, or the grep broke" >&2
-  exit 2
-fi
-
-bad=0 checked=0
-while IFS= read -r line; do
-  spec=$(printf '%s' "${line%%#*}" | tr -d '[:space:]')
-  tag=$(printf '%s' "$line" | sed -nE 's/^[^#]*#[[:space:]]*([^[:space:]]+).*/\1/p')
-  ref=${spec##*@}; path=${spec%@*}
-  repo=$(printf '%s' "$path" | cut -d/ -f1,2)        # drop a subpath: owner/repo/sub -> owner/repo
-  checked=$((checked + 1))
-
-  if ! printf '%s' "$ref" | grep -qE '^[0-9a-f]{40}$'; then
-    echo "FAIL $path — pinned to '$ref', not a 40-hex commit SHA"; bad=$((bad + 1)); continue
-  fi
-  if [ -z "$tag" ]; then
-    echo "FAIL $path — SHA pin has no '# <tag>' comment, so nothing says which version it is"; bad=$((bad + 1)); continue
-  fi
-  # gh prints the API error body on stdout too, so take the output only on success.
-  real=$(gh api "repos/$repo/commits/$tag" --jq .sha 2>/dev/null) || real=""
-  if [ -z "$real" ]; then
-    echo "FAIL $path — tag '$tag' does not resolve in $repo"; bad=$((bad + 1))
-  elif [ "$real" != "$ref" ]; then
-    echo "FAIL $path — labelled '$tag' but that tag is ${real:0:12}, pinned ${ref:0:12}"; bad=$((bad + 1))
-  elif printf '%s' "$tag" | grep -qE '^v?[0-9]+$'; then
-    # True today, but a major alias MOVES: the comment can go stale with no way to show it.
-    echo "WARN $path — '$tag' is a floating major; prefer an exact tag (vX.Y.Z)"
-  fi
-done <<< "$lines"
-
-if [ "$bad" -gt 0 ]; then
-  echo "action pins: $bad of $checked bad. Resolve, never write from memory:" >&2
-  echo "  gh api repos/<owner>/<repo>/commits/<tag> --jq .sha" >&2
-  exit 1
-fi
-echo "action pins: all $checked pinned to a SHA matching their stated tag"
-```
+The script is [`scripts/check-action-pins.sh`](scripts/check-action-pins.sh), in this skill's directory. Copy it into the project as `scripts/check-action-pins.sh` rather than retyping it, and run it from the repository root.
 
 Run it as a CI job so it gates the merge (it needs `gh`, which the GitHub-hosted Ubuntu runner image includes):
 
@@ -434,54 +376,7 @@ it works:
   PR**. Observed on a live pull request, not predicted. Merge commits are exempt entirely: a merge
   certifies nothing about the merged work.
 
-```bash
-# scripts/check-dco.sh
-#!/usr/bin/env bash
-# DCO gate for incoming changes: every non-merge commit in BASE..HEAD must carry a
-# `Signed-off-by:` trailer whose email matches the commit author's.
-#   usage: scripts/check-dco.sh BASE [HEAD]            e.g.  check-dco.sh origin/main HEAD
-# Exit: 0 all signed | 1 unsigned or mismatched | 2 could not run (unresolvable range)
-# Contributors run none of the maintainer's hooks, so this is the enforcement point for PRs.
-# Merge commits are exempt: a merge certifies nothing about the merged work's authorship.
-set -u
-BASE="${1:-}"; HEAD_REF="${2:-HEAD}"
-[ -n "$BASE" ] || { echo "usage: $0 BASE [HEAD]" >&2; exit 2; }
-
-# An unresolvable base would yield zero commits and look like success — so it is an error.
-git rev-parse --verify --quiet "$BASE^{commit}" >/dev/null \
-  || { echo "FAIL: cannot resolve '$BASE' (shallow clone? needs fetch-depth: 0) — DCO NOT checked" >&2; exit 2; }
-git rev-parse --verify --quiet "$HEAD_REF^{commit}" >/dev/null \
-  || { echo "FAIL: cannot resolve '$HEAD_REF' — DCO NOT checked" >&2; exit 2; }
-
-commits=$(git rev-list --no-merges "$BASE..$HEAD_REF")
-[ -n "$commits" ] || { echo "DCO: no non-merge commits in $BASE..$HEAD_REF — nothing to check"; exit 0; }
-
-n=0 bad=0
-while IFS= read -r sha; do
-  [ -n "$sha" ] || continue
-  n=$((n + 1))
-  author=$(git log -1 --format='%ae' "$sha")
-  subject=$(git log -1 --format='%s' "$sha")
-  signers=$(git log -1 --format='%(trailers:key=Signed-off-by,valueonly)' "$sha")
-  if [ -z "$signers" ]; then
-    echo "FAIL $(git rev-parse --short "$sha")  no Signed-off-by — $subject"; bad=$((bad + 1)); continue
-  fi
-  # Bots still need the trailer but are exempt from the author match: Dependabot signs as
-  # `dependabot[bot] <support@github.com>` and authors as `…+dependabot[bot]@users.noreply.github.com`,
-  # so a strict match blocks every dependency PR.
-  case "$author" in *"[bot]"*) continue ;; esac
-  if ! printf '%s\n' "$signers" | grep -qiF "<$author>"; then
-    echo "FAIL $(git rev-parse --short "$sha")  sign-off does not match author <$author> — $subject"
-    bad=$((bad + 1))
-  fi
-done <<< "$commits"
-
-if [ "$bad" -gt 0 ]; then
-  echo "DCO: $bad of $n commit(s) not signed off. Fix: git commit -s --amend --no-edit, or git rebase --signoff BASE" >&2
-  exit 1
-fi
-echo "DCO: all $n commit(s) signed off"
-```
+The script is [`scripts/check-dco.sh`](scripts/check-dco.sh), in this skill's directory. Copy it into the project as `scripts/check-dco.sh` rather than retyping it, and run it from the repository root.
 
 ```yaml
   dco:

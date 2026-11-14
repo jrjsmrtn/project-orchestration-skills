@@ -3,7 +3,7 @@ name: validate-quality-config
 description: Validate consistency across quality configuration files. Use after setup-git-hooks, when debugging "works locally, fails in CI" issues, before major releases, or when onboarding.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.45"
+  version: "0.1.46"
 license: MIT
 ---
 
@@ -237,48 +237,9 @@ Assert, for every lint, format and compliance tool the project runs:
 - every pin is an **exact** version — not a major (`:5`), a minor (`:5.1`), `latest`, or absent;
 - every place that names the tool (hook config, Makefile, scripts, CI) names the **same** version.
 
-Create `scripts/check-tool-pins.sh` and run it with the tool names:
+The check takes the tool names as arguments:
 
-```bash
-# scripts/check-tool-pins.sh
-#!/usr/bin/env bash
-# Every pin of a lint/format/compliance tool must be EXACT, and every place must agree.
-#   usage: scripts/check-tool-pins.sh TOOL [TOOL...]     e.g.  check-tool-pins.sh reuse hadolint
-# Exit: 0 all pins exact and identical | 1 floating or differing pins | 2 no pin found for a tool
-# (2, not 0, when nothing matches: a checker that finds nothing has checked nothing.)
-set -u
-files=$( { ls .lefthook.yml lefthook.yml Makefile justfile .gitlab-ci.yml 2>/dev/null
-           find scripts .lefthook .github/workflows -type f 2>/dev/null; } | sort -u )
-rc=0
-for tool in "$@"; do
-  t=${tool//./\\.}
-  # forms read:  tool:1.2.3   tool==1.2.3   tool@v1.2.3   and the space form  tool 1.2.3
-  ver="((:|==|@)v?[A-Za-z0-9][A-Za-z0-9._-]*|[[:space:]]+v?[0-9][0-9.]*)"
-  re="(^|[^A-Za-z0-9_-])${t}${ver}"
-  # shellcheck disable=SC2086   # $files is a newline list of plain paths
-  hits=$(grep -nHE "$re" $files 2>/dev/null | grep -v 'uses:' || true)   # action pins: harden-github-actions
-  if [ -z "$hits" ]; then
-    echo "✗ $tool: no version pin found anywhere — unpinned, or a form this check does not read" >&2
-    [ $rc -lt 2 ] && rc=2; continue
-  fi
-  versions=""
-  while IFS= read -r line; do
-    v=$(printf '%s' "$line" | grep -oE "${t}${ver}" | head -n1 | sed -E "s/^${t}(:|==|@|[[:space:]]+)v?//")
-    if printf '%s' "$v" | grep -qE '^[0-9]+(\.[0-9]+){2,}'; then
-      versions="$versions $v"
-    else
-      echo "✗ $tool: floating pin '$v' — $(printf '%s' "$line" | cut -d: -f1,2)" >&2; rc=1
-    fi
-  done <<< "$hits"
-  distinct=$(printf '%s\n' $versions | sort -u | grep -c . || true)
-  if [ "$distinct" -gt 1 ]; then
-    echo "✗ $tool: $distinct different exact versions in use: $(printf '%s\n' $versions | sort -u | tr '\n' ' ')" >&2; rc=1
-  elif [ "$distinct" -eq 1 ] && [ $rc -eq 0 ]; then
-    echo "✓ $tool: pinned to $(printf '%s\n' $versions | sort -u) everywhere"
-  fi
-done
-exit $rc
-```
+The script is [`scripts/check-tool-pins.sh`](scripts/check-tool-pins.sh), in this skill's directory. Copy it into the project as `scripts/check-tool-pins.sh` rather than retyping it, and run it from the repository root.
 
 ```bash
 scripts/check-tool-pins.sh reuse hadolint gitleaks   # expect "✓ … pinned to X everywhere" for each
@@ -347,92 +308,9 @@ echo "  - [any mismatches to fix]"
 
 ## Automated Validation Script
 
-Create `scripts/validate-quality-config.sh`:
+The all-in-one check:
 
-```bash
-#!/bin/bash
-# Validate quality configuration consistency
-# Usage: ./scripts/validate-quality-config.sh
-
-set -e
-
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-errors=0
-warnings=0
-
-check() {
-    if eval "$1"; then
-        echo -e "${GREEN}✓${NC} $2"
-    else
-        echo -e "${RED}✗${NC} $2"
-        errors=$((errors + 1))
-    fi
-}
-
-warn() {
-    if eval "$1"; then
-        echo -e "${GREEN}✓${NC} $2"
-    else
-        echo -e "${YELLOW}⚠${NC} $2"
-        warnings=$((warnings + 1))
-    fi
-}
-
-echo "Quality Configuration Validation"
-echo "================================="
-echo ""
-
-# Check reference exists
-check "[ -f docs/reference/quality-configuration.md ]" "quality-configuration.md exists"
-check "[ -f .editorconfig ]" ".editorconfig exists"
-check "[ -f .pre-commit-config.yaml ]" ".pre-commit-config.yaml exists"
-
-echo ""
-echo "Checking value consistency..."
-
-# Toolchain floor vs build version — the one check that asserts a DIFFERENCE.
-# See Step 6; this is the highest-value single check in the script, because getting it
-# wrong ships artifacts built on the least-patched runtime the project supports.
-floor=$(grep -m1 -oE '^go[[:space:]]+[0-9.]+' go.mod 2>/dev/null | grep -oE '[0-9.]+')
-if [ -n "$floor" ]; then
-  if grep -rqE "version:[[:space:]]*\"?${floor}([^0-9.]|$)" .github/workflows/ 2>/dev/null; then
-    echo "✗ CI builds at the declared floor ($floor)"
-    errors=$((errors + 1))
-  fi
-  n_manifest=$(grep -rc 'version-file' .github/workflows/ 2>/dev/null | awk -F: '{s+=$2} END {print s+0}')
-  if [ "$n_manifest" -gt 1 ]; then
-    echo "⚠ $n_manifest call sites read the toolchain from a manifest; only the floor job should"
-    warnings=$((warnings + 1))
-  fi
-fi
-
-# Lint-tool pins: exact, and the same on both sides (Step 6b). List the project's tools.
-# Capture the status itself -- under `set -e` a bare failing call would abort the script
-# before the report. Any non-zero (1 floating/differing, 2 nothing found) is an error.
-if [ -x scripts/check-tool-pins.sh ]; then
-  scripts/check-tool-pins.sh reuse gitleaks && rc=0 || rc=$?
-  if [ "$rc" -ne 0 ]; then errors=$((errors + 1)); fi
-fi
-
-# Add technology-specific checks here based on project type
-
-echo ""
-echo "================================="
-echo "Errors: $errors"
-echo "Warnings: $warnings"
-echo ""
-
-if [ $errors -gt 0 ]; then
-    echo -e "${RED}Validation FAILED${NC}"
-    exit 1
-else
-    echo -e "${GREEN}Validation PASSED${NC}"
-fi
-```
+The script is [`scripts/validate-quality-config.sh`](scripts/validate-quality-config.sh), in this skill's directory. Copy it into the project as `scripts/validate-quality-config.sh` rather than retyping it, and run it from the repository root.
 
 ## Outputs
 

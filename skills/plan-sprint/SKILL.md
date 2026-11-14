@@ -3,7 +3,7 @@ name: plan-sprint
 description: Create a sprint plan for a new development cycle. Use when starting a new sprint, after completing wrapup-sprint, or when initializing Sprint 1 for a new project.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.45"
+  version: "0.1.46"
 license: MIT
 ---
 
@@ -286,25 +286,9 @@ grep "Current Sprint" CLAUDE.md
 grep "Active Sprint" docs/sprints/README.md
 ```
 
-The check, to keep as `scripts/check-derisk.sh`:
+The check:
 
-```bash
-#!/usr/bin/env bash
-# Every row of the plan's "## De-risk" table must end in a verdict: viable, reshaped or rejected.
-#   usage: scripts/check-derisk.sh docs/sprints/sprint-NNNN-plan.md
-# Exit: 0 section present, >=1 row, every row has a verdict | 1 otherwise | 2 no such file
-set -u
-f="${1:-}"; [ -f "$f" ] || { echo "FAIL: no such plan '$f'" >&2; exit 2; }
-grep -q '^## De-risk' "$f" || { echo "FAIL: $f has no '## De-risk' section" >&2; exit 1; }
-rows=$(awk '/^## De-risk/{s=1;next} /^## /{s=0} s && /^\|/ && !/^\|[-: |]+\|$/' "$f" | tail -n +2)   # drop the header row
-[ -n "$rows" ] || { echo "FAIL: '## De-risk' has no rows — state one, or 'none: <reason>' as a row" >&2; exit 1; }
-bad=$(printf '%s\n' "$rows" | grep -viE '\|[[:space:]]*(viable|reshaped|rejected)[[:space:]]*\|?[[:space:]]*$' || true)
-if [ -n "$bad" ]; then
-  echo "FAIL: De-risk rows without a verdict (viable | reshaped | rejected):" >&2
-  printf '%s\n' "$bad" >&2; exit 1
-fi
-echo "De-risk: $(printf '%s\n' "$rows" | grep -c .) row(s), each with a verdict"
-```
+The script is [`scripts/check-derisk.sh`](scripts/check-derisk.sh), in this skill's directory. Copy it into the project as `scripts/check-derisk.sh` rather than retyping it, and run it from the repository root.
 
 It checks **shape**: the section exists and every row ends in a verdict. It cannot tell whether a probe
 was actually run, so a row reading "viable" with no measurement still passes — the Result column is

@@ -8,6 +8,31 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.46] - 2026-11-14
+
+### Changed
+
+- **The ten check scripts now ship as files under `skills/<name>/scripts/`** instead of as text inside `SKILL.md`,
+  which is where the [Agent Skills specification](https://agentskills.io/specification) puts executable code
+  ("`scripts/` … executable code that agents can run"; files referenced by a relative path from the skill root).
+  Each `SKILL.md` now links its script and says to copy it into the project. The scripts: `check-bootstrap.sh`,
+  `check-adrs.sh`, `check-containerfile.sh`, `check-gitlab-pins.sh`, `check-hygiene.sh`, `check-action-pins.sh`,
+  `check-dco.sh`, `check-tool-pins.sh`, `validate-quality-config.sh` and `check-derisk.sh`. Each file was compared
+  with the block it came from: seven are byte-identical, and three had their `# scripts/…` comment above the
+  shebang, which is now line 1. A file can now be linted, and `tests/run.sh` runs the shipped file rather than a
+  copy extracted from Markdown (`tests/extract-script.sh` is gone). Five `SKILL.md` files were over the
+  specification's 500-line guidance; four still are (`setup-git-hooks`, `bootstrap-project`,
+  `setup-architecture-as-code`, `setup-adrs`), mostly prose.
+- **Formatted with `shfmt -i 2 -ci -bn`.** For eight of the ten scripts, `shfmt -mn` of the old block
+  and of the new file are identical; for `check-gitlab-pins.sh` and `check-containerfile.sh` they differ only in
+  how a minified `if` after a `case` pattern prints, and their suites (28 and 44 cases) pass. Five of the moved
+  scripts have no suite (`check-action-pins.sh`, `check-dco.sh`, `check-tool-pins.sh`, `check-derisk.sh`,
+  `validate-quality-config.sh`); for those the comparison above is the only evidence the formatting changed
+  nothing.
+
+Not yet: `shellcheck` and `shfmt` are not in the hooks or in CI, and 29 `shellcheck` findings (one error-severity,
+one warning, the rest info or style) are not yet fixed.
+
 ## [0.1.45] - 2026-11-14
 
 ### Added
