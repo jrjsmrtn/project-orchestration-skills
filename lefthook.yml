@@ -33,8 +33,8 @@ pre-commit:
     # gitleaks' default rules apply: real credentials are still caught, homelab
     # identifiers are not. CI is the enforcement backstop, not this hook.
     #
-    # Fail-open if gitleaks is absent: these repos are public, and a missing
-    # local tool must not block an external contribution.
+    # Fail-CLOSED if gitleaks is absent (see the run block): a machine without it
+    # must not commit unscanned. Unlike the checks below, a miss here leaks a secret.
     gitleaks:
       run: |
         # FAILS when gitleaks is absent, rather than warning and passing. This branch used to
@@ -65,7 +65,8 @@ pre-commit:
     # This catches the other half: manifest drift as the Claude Code spec evolves.
     #
     # Note it exits 0 on warnings, so as a gate it blocks only hard errors.
-    # Fail-open if the CLI is absent, for the same contributor reason as above.
+    # Fail-open if the CLI is absent: these repos are public, and a missing local
+    # tool must not block an external contribution.
     plugin-validate:
       glob:
         - ".claude-plugin/*.json"
@@ -91,7 +92,7 @@ pre-commit:
     # nothing to check -- a marketplace pinning by `ref:` has no SHA to move, and the plugin
     # repos carry no marketplace.json for the glob to match.
     #
-    # Fail-open if python3 is absent, for the same contributor reason as the commands above.
+    # Fail-open if python3 is absent, for the same contributor reason as plugin-validate.
     pin-recorded:
       glob: ".claude-plugin/marketplace.json"
       run: |
@@ -179,7 +180,7 @@ pre-commit:
     # Inert where there is nothing to check: a marketplace repo carries no plugin.json, and a
     # plugin with no skills has no version to repeat.
     #
-    # Fail-open if python3 is absent, for the same contributor reason as the commands above.
+    # Fail-open if python3 is absent, for the same contributor reason as plugin-validate.
     version-lockstep:
       glob:
         - ".claude-plugin/plugin.json"
