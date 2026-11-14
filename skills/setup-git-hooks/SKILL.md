@@ -3,7 +3,7 @@ name: setup-git-hooks
 description: Configure two-stage git hooks (pre-commit + pre-push) for quality automation, with either pre-commit or lefthook as the hook manager. Use after bootstrap-project and setup-adrs, when adding quality gates to an existing project, or when standardizing quality automation.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.44"
+  version: "0.1.45"
 license: MIT
 ---
 

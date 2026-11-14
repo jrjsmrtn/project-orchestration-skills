@@ -3,7 +3,7 @@ name: bootstrap-project
 description: Bootstrap a new project at a chosen graduation tier (t0 minimum, t1 decision-tracked, t2 full pattern language) following AI-Assisted Project Orchestration best practices. Use when starting a new software project, promoting an existing project to a higher tier, or converting an existing project for AI-assisted development.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.44"
+  version: "0.1.45"
 license: MIT
 ---
 
@@ -507,6 +507,11 @@ The same applies to version numbers, supported-platform lists, dependency counts
 complete" progress. If a generator can derive it, the README should invoke the generator or say
 nothing.
 
+`scripts/check-bootstrap.sh` enforces two parts of this at t1: a `Status` line or section quoting a count, or
+stating neither a date nor a link, fails; and when `pyproject.toml`, `Cargo.toml` or `package.json` has a
+`description`, it must be at most 120 characters and appear verbatim in the README. The rest of the rule
+still needs a reader.
+
 **Say what the project is *not*.** The cheapest paragraph in any README, and the one that saves the
 most reader time — scope boundaries, adjacent things it is confused with, and where those live
 instead. A reader who bounces in ten seconds because you told them it is not what they want is a
@@ -823,7 +828,35 @@ if [ "$rank" -ge 1 ]; then
     if compgen -G "docs/adr/$n-*.md" >/dev/null; then ok t1 "docs/adr/$n-*.md exists"; else bad t1 "docs/adr/$n-*.md is missing"; fi
   done
 
-  if [ -f README.md ]; then ok t1 "README.md exists"; else bad t1 "README.md is missing"; fi
+  if [ -f README.md ]; then
+    ok t1 "README.md exists"
+    # derive-don't-assert (Phase 6): a Status section states a date or a link, never a count
+    st=$(awk '
+      /^[#>*_ -]*[Ss]tatus[*_:]*/ && !on { on=1; n=0; print; next }
+      on && /^#/ { exit }
+      on { print; if (++n >= 6) exit }' README.md)
+    if [ -z "$st" ]; then note "README.md has no Status line or section, so its status claim was not checked"
+    else
+      if printf '%s\n' "$st" | grep -qE '(^|[^[:alnum:]])([0-9]+|one|two|three|four|five|six|seven|eight|nine|ten) (verified |draft |open |done |complete )?(records?|concepts?|skills?|patterns?|ADRs?|tests?|rules?|checks?|bundles?|entries|files|issues|plugins?)([^[:alnum:]]|$)|[0-9]+ (of|/) ?[0-9]+'; then
+        bad t1 "README.md Status quotes a count: point at the command that derives it, or state a date or a link"
+      elif printf '%s\n' "$st" | grep -qE '[0-9]{4}-[0-9]{2}-[0-9]{2}|\]\(|https?://'; then ok t1 "README.md Status states a date or a link"
+      else bad t1 "README.md Status states neither a date nor a link"; fi
+    fi
+    if grep -qE '[0-9]+ (of|/) ?[0-9]+ (complete|done|passing|verified)' README.md; then
+      bad t1 "README.md carries an 'N of M complete' progress claim: derive it or drop it"
+    fi
+    # one source of truth for the short description: the manifest's, at most 120 characters, verbatim in the README
+    # (line wraps, [text](url) markup and a trailing full stop are not rewording)
+    desc=""
+    for m in pyproject.toml Cargo.toml; do
+      [ -f "$m" ] && desc=$(sed -nE 's/^description *= *"(.*)"[[:space:]]*$/\1/p' "$m" | head -1) && [ -n "$desc" ] && break
+    done
+    if [ -z "$desc" ] && [ -f package.json ]; then desc=$(sed -nE 's/^ *"description": *"(.*)",?[[:space:]]*$/\1/p' package.json | head -1); fi
+    if [ -z "$desc" ]; then note "no manifest description (pyproject.toml, Cargo.toml, package.json), so the README short description was not matched"
+    elif [ "${#desc}" -gt 120 ]; then bad t1 "manifest description is ${#desc} characters; the short description is at most 120"
+    elif tr '\n' ' ' < README.md | sed -E 's/\[([^]]*)\]\([^)]*\)/\1/g; s/  +/ /g' | grep -qF -- "${desc%.}"; then ok t1 "README.md carries the manifest description verbatim (${#desc} characters)"
+    else bad t1 "README.md does not carry the manifest description verbatim: one source, copied, not reworded"; fi
+  else bad t1 "README.md is missing"; fi
 
   cfg=""; for c in lefthook.yml lefthook.yaml .lefthook.yml .pre-commit-config.yaml; do [ -f "$c" ] && cfg=$c && break; done
   if [ -z "$cfg" ]; then bad t1 "no hook manager config (lefthook.yml or .pre-commit-config.yaml)"
@@ -886,7 +919,8 @@ could not be determined. It checks, by tier:
   `.gitignore` covers `.env`, `*.pem`, `*.key`, `credentials.json` and `CLAUDE.local.md` — judged
   by the file alone in a scratch repository, because your own global excludes file is not the project's.
 - **t1**: `CHANGELOG.md` with `[Unreleased]`; `main` and `develop`; ADR-0001 to 0003 (and 0004 when the
-  Category is Infrastructure or Hybrid); a README; a hook manager configured and both `pre-commit` and
+  Category is Infrastructure or Hybrid); a README whose Status states a date or a link and no count, and whose
+  text carries the manifest's description (at most 120 characters) verbatim; a hook manager configured and both `pre-commit` and
   `pre-push` installed.
 - **t2**: the `docs/` tree, `architecture/workspace.dsl`, the roadmap, the Sprint 1 plan, and a
   `## Current Development Status` section.

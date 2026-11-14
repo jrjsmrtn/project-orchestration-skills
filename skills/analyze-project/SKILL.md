@@ -3,7 +3,7 @@ name: analyze-project
 description: Conduct SPARK methodology analysis for new project inception. Use at the beginning of a new project, when evaluating significant features, before bootstrap-project to validate viability, or when pivoting an existing project.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.44"
+  version: "0.1.45"
 license: MIT
 ---
 

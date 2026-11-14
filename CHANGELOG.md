@@ -8,6 +8,23 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.45] - 2026-11-14
+
+### Added
+
+- **`bootstrap-project`: `check-bootstrap.sh` enforces the README rules** (roadmap H19). At t1 it fails a README
+  `Status` line or section that quotes a count (`15 verified records`, `3 of 9`) or states neither a date nor a link,
+  and an "N of M complete" claim anywhere. When `pyproject.toml`, `Cargo.toml` or `package.json` has a `description`,
+  it must be at most 120 characters and appear in the README verbatim; line wraps, `[text](url)` markup and a trailing
+  full stop are not rewording. With no Status or no manifest description it says so and does not fail. Run against 12
+  real projects: three failed on the description (two true rewordings, one line-wrapped and linked copy that the first
+  version wrongly failed; the normalisation above came from that). 17 new fixture cases; removing the normalisation
+  makes two of them fail.
+- **`tests/`**: the fault-injection suites behind the five embedded check scripts (`check-adrs.sh`,
+  `check-bootstrap.sh`, `check-containerfile.sh`, `check-gitlab-pins.sh`, `check-hygiene.sh`). `tests/run.sh`
+  extracts each script from its `SKILL.md` and runs its suite, so the tested text is the shipped text; a check that
+  always passes fails the suite. Until now they lived in a session scratchpad.
+
 ## [0.1.44] - 2026-11-14
 
 ### Added
