@@ -8,6 +8,23 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.42] - 2026-11-14
+
+### Added
+
+- **`setup-adrs` Validation is now `check-adrs.sh`** (roadmap H19, ADR-0009 rung 2). Six prose items
+  (numbering, ADR-0002 customised, ADR-0003 with alternatives, ADR-0004 only for Infrastructure or
+  Hybrid, an accurate `index.yml`, correct dates) become a script that checks the file names and the
+  adr-tools `# N. Title` heading, calendar-valid and not-future dates, the Status value, the required
+  sections, leftover template placeholders, numbering, the ADR-0003 alternatives and ADR-0004 rules, and
+  that `index.yml` agrees with the ADRs. It runs under bash 3.2. What stays a person's job is named:
+  whether ADR-0002 fits the stack, and whether ADR-0003's reasoning is sound.
+  33 fixture cases with each fault planted, under bash 5 and 3.2. Run against real ADR logs: three
+  pass; it found a real index drift in `bomdive` (ADR-0011 listed Proposed, the ADR is Accepted). Its
+  first version reported four real logs as failing for formats the skill permits, so a trailing period or
+  bold date in the Status, and an SPDX comment above the heading, are now accepted and tested.
+  Not yet run in CI.
+
 ## [0.1.41] - 2026-11-14
 
 ### Added
