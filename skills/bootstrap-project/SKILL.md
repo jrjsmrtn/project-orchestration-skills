@@ -3,7 +3,7 @@ name: bootstrap-project
 description: Bootstrap a new project at a chosen graduation tier (t0 minimum, t1 decision-tracked, t2 full pattern language) following AI-Assisted Project Orchestration best practices. Use when starting a new software project, promoting an existing project to a higher tier, or converting an existing project for AI-assisted development.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.40"
+  version: "0.1.41"
 license: MIT
 ---
 
@@ -742,27 +742,172 @@ This skill creates artifacts based on tier:
 
 ## Validation
 
-Verify successful bootstrap based on tier:
+Run the check; do not read the list. Save this as `scripts/check-bootstrap.sh` in the new project (it
+only reads, so running it from a copy elsewhere works too) and run it from the project root:
+`scripts/check-bootstrap.sh` reads the tier from CLAUDE.md's `Current tier: **tN**` line (the form
+Phase 3 writes), or pass `t0`, `t1` or `t2`; add `--public` for the Public profile, or let it read
+`Distribution profile: Public` from CLAUDE.md. Tiers are cumulative, and an argument that disagrees
+with what CLAUDE.md declares is itself a failure.
 
-**Tier 0**:
-1. `git log` shows at least one conventional commit
-2. CLAUDE.md exists with accurate project information and `## Project Tier: t0`
-3. `.gitignore` covers security patterns (`.env`, credentials, `CLAUDE.local.md`)
+```bash
+#!/usr/bin/env bash
+# scripts/check-bootstrap.sh — the mechanical half of bootstrap-project's Validation.
+#   usage: scripts/check-bootstrap.sh [t0|t1|t2] [--public]       run from the repository root
+#   The tier defaults to the one CLAUDE.md states ("Current tier: **t1**"); --public defaults to
+#   CLAUDE.md's "Distribution profile: Public". Tiers are cumulative: t2 runs the t0 and t1 checks too.
+#   exit:  0 every check passed | 1 at least one FAILED | 2 the tier could not be determined
+# Not checked here, because they need a person, a container runtime or a forge:
+#   - that the pre-commit hooks RUN successfully (run them: `lefthook run pre-commit` or
+#     `pre-commit run --all-files`), only that they are configured and installed;
+#   - that architecture/workspace.dsl validates (run the Structurizr validate for your runtime);
+#   - that SECURITY.md's Scope is a good threat model, only that it is filled in;
+#   - that private vulnerability reporting is on (GitHub: gh api repos/{owner}/{repo}/private-vulnerability-reporting --jq .enabled).
+set -u
+fail=0
+ok()   { echo "ok    [$1] $2"; }
+bad()  { echo "FAIL  [$1] $2"; fail=1; }
+note() { echo "note  $*"; }
 
-**Tier 1** (adds to t0 checks):
-4. CHANGELOG.md exists with `[Unreleased]` section
-5. `main` and `develop` branches both exist
-6. `docs/adr/0001-*.md`, `0002-*.md`, `0003-*.md` exist (and `0004-*.md` for Infrastructure/Hybrid)
-7. Pre-commit hooks installed and run successfully on initial commit
+tier=""; public=0
+for a in "$@"; do
+  case "$a" in t0|t1|t2) tier=$a ;; --public) public=1 ;; *) echo "usage: $0 [t0|t1|t2] [--public]" >&2; exit 2 ;; esac
+done
+if [ -z "$tier" ] && [ -f CLAUDE.md ]; then
+  tier=$(sed -nE 's/^Current tier: \*\*(t[012])\*\*.*/\1/p' CLAUDE.md | head -1)
+fi
+[ -n "$tier" ] || { echo "FAIL  tier unknown: pass t0|t1|t2, or state 'Current tier: **tN**' in CLAUDE.md" >&2; exit 2; }
+if [ "$public" -eq 0 ] && [ -f CLAUDE.md ] && grep -qE 'Distribution profile\*\*: *Public' CLAUDE.md; then public=1; fi
+rank=${tier#t}
 
-**Tier 2** (adds to t1 checks):
-8. `docs/` directory tree exists (tutorials, howto, reference, explanation, adr, architecture, sprints, roadmap)
-9. `architecture/workspace.dsl` exists and validates
-10. `docs/sprints/sprint-0001-plan.md` exists
-11. (If Audience Registry) Traced artifacts align with audience categories
+git rev-parse --git-dir >/dev/null 2>&1 || { echo "FAIL  [t0] not inside a git repository"; exit 1; }
 
-**Public profile** (any tier):
-12. `SECURITY.md` exists with a private reporting channel and a filled-in Scope section (not boilerplate)
+# ---------------------------------------------------------------- t0
+if git rev-parse -q --verify HEAD >/dev/null 2>&1; then
+  if git log --format=%s | grep -qE '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([^)]+\))?!?: .+'; then
+    ok t0 "at least one conventional commit"
+  else bad t0 "no commit subject is a conventional commit (type(scope): subject)"; fi
+else bad t0 "no commits yet"; fi
+
+if [ ! -f CLAUDE.md ]; then bad t0 "CLAUDE.md is missing"
+else
+  if grep -qE "^Current tier: \*\*$tier\*\*" CLAUDE.md; then ok t0 "CLAUDE.md states 'Current tier: **$tier**'"
+  else bad t0 "CLAUDE.md does not state 'Current tier: **$tier**' under ## Project Tier"; fi
+  ctx=$(sed -nE 's/^- \*\*Tier\*\*: *(t[012]).*/\1/p' CLAUDE.md | head -1)
+  if [ -n "$ctx" ] && [ "$ctx" != "$tier" ]; then bad t0 "CLAUDE.md Project Context says Tier: $ctx but the tier is $tier"; fi
+fi
+
+# .gitignore, judged by itself in a scratch repository: your global excludes file is not the project's
+if [ -f .gitignore ]; then
+  tmp=$(mktemp -d) && git -C "$tmp" init -q && cp .gitignore "$tmp/.gitignore"
+  miss=""
+  for p in .env .env.local server.pem server.key credentials.json CLAUDE.local.md; do
+    git -C "$tmp" -c core.excludesFile=/dev/null check-ignore -q --no-index "$p" 2>/dev/null || miss="$miss $p"
+  done
+  rm -rf "$tmp"
+  if [ -z "$miss" ]; then ok t0 ".gitignore covers .env, *.pem, *.key, credentials.json, CLAUDE.local.md"
+  else bad t0 ".gitignore does not ignore:$miss"; fi
+else bad t0 ".gitignore is missing"; fi
+
+# ---------------------------------------------------------------- t1
+if [ "$rank" -ge 1 ]; then
+  if [ -f CHANGELOG.md ] && grep -qE '^## \[Unreleased\]' CHANGELOG.md; then ok t1 "CHANGELOG.md has an [Unreleased] section"
+  else bad t1 "CHANGELOG.md is missing or has no '## [Unreleased]' section"; fi
+
+  for b in main develop; do
+    if git show-ref --verify --quiet "refs/heads/$b"; then ok t1 "branch $b exists"; else bad t1 "branch $b does not exist"; fi
+  done
+
+  adrs="0001 0002 0003"
+  if [ -f CLAUDE.md ] && grep -qE '\*\*Category\*\*: *(Infrastructure|Hybrid)' CLAUDE.md; then adrs="$adrs 0004"; fi
+  for n in $adrs; do
+    if compgen -G "docs/adr/$n-*.md" >/dev/null; then ok t1 "docs/adr/$n-*.md exists"; else bad t1 "docs/adr/$n-*.md is missing"; fi
+  done
+
+  if [ -f README.md ]; then ok t1 "README.md exists"; else bad t1 "README.md is missing"; fi
+
+  cfg=""; for c in lefthook.yml lefthook.yaml .lefthook.yml .pre-commit-config.yaml; do [ -f "$c" ] && cfg=$c && break; done
+  if [ -z "$cfg" ]; then bad t1 "no hook manager config (lefthook.yml or .pre-commit-config.yaml)"
+  else
+    ok t1 "hook manager configured ($cfg)"
+    for h in pre-commit pre-push; do
+      hp=$(git rev-parse --git-path "hooks/$h")
+      if [ -x "$hp" ]; then ok t1 "$h hook installed ($hp)"; else bad t1 "$h hook not installed at $hp"; fi
+    done
+    note "hooks are installed, not proven to pass: run 'lefthook run pre-commit' (or 'pre-commit run --all-files')"
+  fi
+fi
+
+# ---------------------------------------------------------------- t2
+if [ "$rank" -ge 2 ]; then
+  for d in tutorials howto reference explanation adr architecture sprints roadmap; do
+    if [ -d "docs/$d" ]; then ok t2 "docs/$d/ exists"; else bad t2 "docs/$d/ is missing"; fi
+  done
+  for f in architecture/workspace.dsl docs/roadmap/roadmap.md docs/sprints/sprint-0001-plan.md; do
+    if [ -f "$f" ]; then ok t2 "$f exists"; else bad t2 "$f is missing"; fi
+  done
+  if [ -f CLAUDE.md ] && grep -qE '^## Current Development Status' CLAUDE.md; then ok t2 "CLAUDE.md has '## Current Development Status'"
+  else bad t2 "CLAUDE.md has no '## Current Development Status' section"; fi
+  note "architecture/workspace.dsl exists, not proven to validate: run the Structurizr validate for your container runtime"
+fi
+
+# ---------------------------------------------------------------- Public profile
+if [ "$public" -eq 1 ]; then
+  if [ ! -f SECURITY.md ]; then bad public "SECURITY.md is missing"
+  else
+    grep -qE '^## Reporting a Vulnerability' SECURITY.md && ok public "SECURITY.md has '## Reporting a Vulnerability'" \
+      || bad public "SECURITY.md has no '## Reporting a Vulnerability' section"
+    if grep -qE 'security/advisories/new|[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]+' SECURITY.md; then ok public "SECURITY.md names a private reporting channel"
+    else bad public "SECURITY.md names no private channel (a security/advisories/new link or an email address)"; fi
+    scope=$(awk '/^## Scope/{f=1;next} /^## /{f=0} f' SECURITY.md)
+    if [ -z "$scope" ]; then bad public "SECURITY.md has no '## Scope' section"
+    elif printf '%s' "$scope" | grep -qE '\[Author-filled|\{[a-z-]+\}|\[N business days\]'; then bad public "SECURITY.md Scope is still the template placeholder"
+    elif [ "$(printf '%s' "$scope" | wc -w | tr -d ' ')" -lt 20 ]; then bad public "SECURITY.md Scope is under 20 words — not a threat model"
+    else ok public "SECURITY.md Scope is filled in"; fi
+    if grep -qE '\{[a-z-]+\}|\[N business days\]' SECURITY.md; then bad public "SECURITY.md still has template placeholders ({owner}, [N business days], ...)"; fi
+  fi
+  if [ -f CLAUDE.md ] && grep -qE 'Distribution profile\*\*:' CLAUDE.md; then ok public "CLAUDE.md records the distribution profile"
+  else bad public "CLAUDE.md ## Project Context does not record the distribution profile"; fi
+  note "private vulnerability reporting must be on: gh api repos/{owner}/{repo}/private-vulnerability-reporting --jq .enabled   # -> true"
+fi
+
+# ---------------------------------------------------------------- GitHub remote
+if git remote -v | grep -q 'github\.com'; then
+  if [ -f .github/dependabot.yml ] || [ -f .github/dependabot.yaml ]; then ok remote ".github/dependabot.yml exists"
+  else bad remote "a github.com remote exists but .github/dependabot.yml does not"; fi
+fi
+
+exit "$fail"
+```
+
+Exit codes: **0** every check passed; **1** at least one failed (each line names its tier); **2** the tier
+could not be determined. It checks, by tier:
+
+- **t0**: at least one conventional commit; CLAUDE.md states the tier and its Project Context agrees;
+  `.gitignore` covers `.env`, `*.pem`, `*.key`, `credentials.json` and `CLAUDE.local.md` — judged
+  by the file alone in a scratch repository, because your own global excludes file is not the project's.
+- **t1**: `CHANGELOG.md` with `[Unreleased]`; `main` and `develop`; ADR-0001 to 0003 (and 0004 when the
+  Category is Infrastructure or Hybrid); a README; a hook manager configured and both `pre-commit` and
+  `pre-push` installed.
+- **t2**: the `docs/` tree, `architecture/workspace.dsl`, the roadmap, the Sprint 1 plan, and a
+  `## Current Development Status` section.
+- **Public profile**: `SECURITY.md` with a reporting section, a private channel (an advisories link or an
+  email address), no template placeholders left, and a Scope of at least 20 words that is not the
+  template's; CLAUDE.md records the distribution profile.
+- **A github.com remote**: `.github/dependabot.yml`.
+
+What it does **not** check, and you must:
+
+- That the hooks **run** and pass: it checks they are installed. Run `lefthook run pre-commit` (or
+  `pre-commit run --all-files`) on the initial commit.
+- That `architecture/workspace.dsl` **validates**: run the Structurizr validate for your container runtime.
+- That audience-traced artifacts align with the audience categories (if a registry exists).
+- That the Scope is a *good* threat model, only that it is filled in; and that private vulnerability
+  reporting is on: `gh api repos/{owner}/{repo}/private-vulnerability-reporting --jq .enabled` → `true`.
+
+Tested against fixtures with each check's fault planted (39 cases), and against real projects: two
+bootstrapped with this skill (`bomdive`, `portfolio`) pass at t1, a third (`mmd2tex`) passes at t2, and two
+more at t1 fail only on the `.github/dependabot.yml` their github.com remote calls for. Projects not
+bootstrapped with this skill fail on the tier line and more, as they should. Not yet run in CI.
 
 ## Related Skills
 

@@ -8,6 +8,27 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.41] - 2026-11-14
+
+### Added
+
+- **`bootstrap-project` Validation is now `check-bootstrap.sh`** (roadmap H19, ADR-0009 rung 2). The
+  list asked the reader to verify that `git log` shows a conventional commit, that CLAUDE.md states the
+  tier, that `.gitignore` covers the secret patterns, that `main` and `develop` and the ADRs exist, that
+  the `docs/` tree and the Sprint 1 plan exist, and that `SECURITY.md` has a filled-in Scope. The script
+  runs those, tier by tier (cumulative), plus the Public profile and the `.github/dependabot.yml` a
+  github.com remote calls for. It exits 2 when the tier cannot be determined. What it cannot do is named:
+  hooks run, the DSL validates, audience alignment, the quality of the Scope.
+  39 fixture cases with each fault planted; run against real projects, where two bootstrapped with this
+  skill pass at t1, one passes at t2, and two fail only on the missing `dependabot.yml`. Not yet run in CI.
+
+### Changed
+
+- The `.gitignore` check is made on the file alone in a scratch repository with the global excludes file
+  off, the lesson of `public-release` 0.1.19.
+- Validation said `## Project Tier: t0`; the Phase 3 template writes `Current tier: **t0**`. The check
+  follows the template.
+
 ## [0.1.40] - 2026-11-14
 
 ### Added
