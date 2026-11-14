@@ -2,6 +2,9 @@
 # scripts/check-action-pins.sh
 # Every `uses: owner/repo@<sha> # <tag>` must pin a 40-hex commit SHA, and that SHA must be
 # the commit <tag> actually resolves to. A comment is a claim; this resolves it.
+# <tag> is resolved as a TAG (git/ref/tags/<tag>, annotated tags followed to their commit), never
+# through commits/<ref>, which accepts any ref: a comment that repeats the SHA, or names a branch, would
+# resolve to itself and pass. A comment that is a 40-hex SHA, or is not a valid tag name, fails.
 #   usage: scripts/check-action-pins.sh [workflow-dir]        (default .github/workflows)
 # Exit: 0 all pins true | 1 unpinned, unlabelled or mislabelled | 2 could not run
 # (2, not 0, when it cannot run or finds no `uses:` — a checker that checked nothing passed nothing.)
@@ -32,6 +35,27 @@ if [ -z "$lines" ]; then
   exit 2
 fi
 
+# resolve_tag REPO TAG: print the commit SHA the tag points at; return 1 if it is not a tag or cannot be
+# followed. An annotated tag points at a tag object, which is followed (a bounded number of hops).
+resolve_tag() {
+  local repo=$1 tag=$2 obj type sha
+  obj=$(gh api "repos/$repo/git/ref/tags/$tag" --jq '.object.type + " " + .object.sha' 2>/dev/null) || return 1
+  for _ in 1 2 3 4 5; do
+    type=${obj%% *}
+    sha=${obj##* }
+    case $type in
+      commit)
+        printf '%s' "$sha" | grep -qE '^[0-9a-f]{40}$' || return 1
+        printf '%s\n' "$sha"
+        return 0
+        ;;
+      tag) obj=$(gh api "repos/$repo/git/tags/$sha" --jq '.object.type + " " + .object.sha' 2>/dev/null) || return 1 ;;
+      *) return 1 ;;
+    esac
+  done
+  return 1
+}
+
 bad=0 checked=0
 while IFS= read -r line; do
   spec=$(printf '%s' "${line%%#*}" | tr -d '[:space:]')
@@ -51,10 +75,19 @@ while IFS= read -r line; do
     bad=$((bad + 1))
     continue
   fi
-  # gh prints the API error body on stdout too, so take the output only on success.
-  real=$(gh api "repos/$repo/commits/$tag" --jq .sha 2>/dev/null) || real=""
+  if printf '%s' "$tag" | grep -qE '^[0-9a-f]{40}$'; then
+    echo "FAIL $path — the comment is a commit SHA, not a tag: it would only restate the pin"
+    bad=$((bad + 1))
+    continue
+  fi
+  if printf '%s' "$tag" | grep -qE '[^A-Za-z0-9._/+-]|^[-/]|/$|//|\.\.'; then
+    echo "FAIL $path — '$tag' is not a valid tag name"
+    bad=$((bad + 1))
+    continue
+  fi
+  real=$(resolve_tag "$repo" "$tag") || real=""
   if [ -z "$real" ]; then
-    echo "FAIL $path — tag '$tag' does not resolve in $repo"
+    echo "FAIL $path — '$tag' is not a tag in $repo (a branch name or a commit SHA is not a tag)"
     bad=$((bad + 1))
   elif [ "$real" != "$ref" ]; then
     echo "FAIL $path — labelled '$tag' but that tag is ${real:0:12}, pinned ${ref:0:12}"
@@ -67,7 +100,7 @@ done <<<"$lines"
 
 if [ "$bad" -gt 0 ]; then
   echo "action pins: $bad of $checked bad. Resolve, never write from memory:" >&2
-  echo "  gh api repos/<owner>/<repo>/commits/<tag> --jq .sha" >&2
+  echo "  gh api repos/<owner>/<repo>/git/ref/tags/<tag> --jq .object   # an annotated tag: follow git/tags/<sha> to its commit" >&2
   exit 1
 fi
 echo "action pins: all $checked pinned to a SHA matching their stated tag"

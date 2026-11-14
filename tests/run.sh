@@ -15,5 +15,6 @@ run bootstrap-project check-bootstrap.sh bootstrap.test.sh path
 run setup-container-security check-containerfile.sh containerfile.test.sh runner
 run harden-gitlab-ci check-gitlab-pins.sh gitlab.test.sh path
 run setup-git-hooks check-hygiene.sh hygiene.test.sh runner
+run harden-github-actions check-action-pins.sh action-pins.test.sh runner
 echo "suites failed: $fails"
 exit $fails

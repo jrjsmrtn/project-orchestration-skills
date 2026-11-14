@@ -3,7 +3,7 @@ name: harden-github-actions
 description: Harden GitHub Actions CI/CD workflows for supply-chain security — SHA-pin actions, least-privilege token permissions, verified toolchain installs, OpenSSF Scorecard, and SLSA provenance. Use when adding or auditing GitHub Actions workflows, before making a repository public, when a supply-chain review flags CI gaps, or when standardizing CI hardening across GitHub projects. GitHub-specific by design — GitLab CI and Forgejo Actions are out of scope.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.46"
+  version: "0.1.47"
 license: MIT
 ---
 
@@ -74,10 +74,14 @@ Pin every `uses:` to a **full 40-character commit SHA** with a trailing `# vX.Y.
 - uses: actions/checkout@v4
 ```
 
-Resolve a tag to its commit SHA:
+Resolve a tag to its commit SHA. Ask for the **tag**, not for `commits/<name>`: that endpoint also answers for
+a branch name or a bare SHA, so it cannot show that a name is a tag.
 
 ```bash
-gh api repos/actions/checkout/commits/v4.2.2 --jq '.sha'
+gh api repos/actions/checkout/git/ref/tags/v4.2.2 --jq '.object.type + " " + .object.sha'
+# "commit <sha>": pin that SHA.
+# "tag <sha>" (an annotated tag): that is the tag object, not the commit. Follow it, and pin what it reaches:
+gh api repos/<owner>/<repo>/git/tags/<sha> --jq '.object.type + " " + .object.sha'
 ```
 
 Keep pins current automatically with a Dependabot `github-actions` update block (see `bootstrap-project` / the dependency-update config).
@@ -99,7 +103,9 @@ So:
 ### Step 2b: Audit the pin labels
 
 A pin's comment is a claim. This check resolves it: every `uses:` must be a 40-hex SHA, carry a tag
-comment, and that tag must resolve to that SHA.
+comment, and that tag must resolve to that SHA. The script resolves the comment **as a tag** (following an
+annotated tag to its commit), so a comment that repeats the SHA, or names a branch, fails instead of
+resolving to itself. An earlier version asked `commits/<comment>`, which passed both.
 
 The script is [`scripts/check-action-pins.sh`](scripts/check-action-pins.sh), in this skill's directory. Copy it into the project as `scripts/check-action-pins.sh` rather than retyping it, and run it from the repository root.
 

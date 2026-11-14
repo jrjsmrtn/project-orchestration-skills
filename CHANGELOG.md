@@ -8,6 +8,31 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.47] - 2026-11-14
+
+### Fixed
+
+- **`harden-github-actions`: `check-action-pins.sh` resolved the pin's comment through `commits/<comment>`, which
+  answers for any ref.** A comment that repeated the pinned SHA, or named a branch, therefore resolved to itself
+  and passed, so the check could not tell that the comment was not a tag (checked against `actions/checkout`: both
+  `commits/<its own sha>` and `commits/main` return a SHA). It now resolves the comment as a **tag**
+  (`git/ref/tags/<tag>`), follows an annotated tag to the commit it points at (up to five hops), and fails a
+  comment that is a 40-hex SHA, is not a valid tag name (`..`, a leading `-` or `/`, `//`, a trailing `/`, a
+  character outside `A-Za-z0-9._/+-`), or is not a tag in that repository. Run on real workflows, it found at least four
+  projects pinning `actions/dependency-review-action` with the comment `# v4`, which is a branch there, not a tag;
+  the old script passed it.
+- The skill now shows how to resolve a tag with `git/ref/tags/<tag>`, and why `commits/<name>` is the wrong
+  question. It had shown `commits/<tag>`.
+
+### Added
+
+- `tests/action-pins.test.sh`: 31 cases against a stubbed `gh` (no network): lightweight, annotated and chained tags,
+  the tag object pinned instead of the commit, a comment repeating the SHA, a branch, an invalid name, a slash in a
+  tag name, a floating major, subpaths, and the cannot-run exits. The fixtures answer `commits/<ref>` the way GitHub
+  does; the old script fails 21 of the cases, including the bypasses, and this one passes all of them.
+
+Found by an automated security review of 0.1.46 (rated medium). Not run in CI or as a hook.
+
 ## [0.1.46] - 2026-11-14
 
 ### Changed
