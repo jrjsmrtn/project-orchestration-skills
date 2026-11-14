@@ -8,6 +8,26 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.44] - 2026-11-14
+
+### Added
+
+- **`setup-container-security` ships `check-containerfile.sh`** (roadmap H19, ADR-0009 rung 1). Validation
+  was three greps and an `echo`. The script fails on a `FROM` with no `@sha256:<64 hex>`, a final stage with no
+  non-root `USER`, `curl | sh` in its forms, a download with no checksum or signature check in the same `RUN`, and
+  `apt-get install` without `--no-install-recommends`; and, per repository, on no ignore file excluding `.git` and
+  `.env`, no `hadolint`, no `.grype.yaml`, no `grype` in CI, and a Dependabot file with no `docker` ecosystem. A
+  `${VARIABLE}` base is expanded from its global `ARG` default, repeatedly, and the result is checked. Exceptions
+  are declared in the file (`# root-ok: <reason>`, `# unverified-ok: <reason>`), not by turning the check off.
+  44 fixture cases under bash 5 and 3.2. Run against real projects, it found unpinned bases, a missing `USER`, a
+  root PostgreSQL-based image and, after expanding `ARG` defaults, the unpinned images behind `FROM ${BUILDER_IMAGE}`.
+  Not yet run in CI or as a hook.
+
+### Changed
+
+- The Step 1 greps are labelled exploratory. `^FROM .*:[^@]*$` flagged a correctly pinned `FROM
+  node:22@sha256:… AS build` and missed `FROM ubuntu`.
+
 ## [0.1.43] - 2026-11-14
 
 ### Added
