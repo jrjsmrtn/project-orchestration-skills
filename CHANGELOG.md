@@ -8,6 +8,20 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+## [0.1.49] - 2026-11-15
+
+### Changed
+
+- **`setup-adrs` no longer treats the third-party licensing record as a public-project concern.** The
+  `LICENSING.md` and copyleft-floor guidance said it applied "when the project is distributed publicly", and
+  the checklist item read "Public project that vendors/bundles/static-links third-party code", so an
+  internal-only project was never prompted. The floor depends on how the artifact is distributed, and a project
+  that is internal today can become redistributed or run as a service with no dependency change. The scope
+  sentence and the checklist item now say so, and a new paragraph tells a proprietary or internal-only project
+  to record the intended distribution mode and where "internal" ends (a subsidiary, a contractor, a customer's
+  environment), and to state its own terms in place of an SPDX licence. It makes no claim about what counts as
+  distribution. Wording only; no script changed, and `tests/run.sh` passes.
+
 ### Fixed
 
 - **The test suites could run in the directory they were started from.** Each suite makes a scratch directory with

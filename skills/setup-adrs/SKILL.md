@@ -3,7 +3,7 @@ name: setup-adrs
 description: Create the foundational Architecture Decision Record (ADR) sequence for a new project. Use after bootstrap-project, when establishing decision documentation, or when standardizing ADR practices.
 metadata:
   author: "Georges Martin <jrjsmrtn@gmail.com>"
-  version: "0.1.48"
+  version: "0.1.49"
 license: MIT
 ---
 
@@ -493,7 +493,7 @@ foundational:
 
 ## Third-Party / Aggregate Licensing (LICENSING.md)
 
-Section 11 covers the project's **own** license (REUSE/SPDX). This covers **third-party** licensing for projects that **vendor, bundle, statically link, or ship a container/WASM image** containing others' code — a concern when the project is distributed publicly. Produce a `LICENSING.md` and record the decision in an ADR.
+Section 11 covers the project's **own** license (REUSE/SPDX). This covers **third-party** licensing for projects that **vendor, bundle, statically link, or ship a container/WASM image** containing others' code — **whether or not it is distributed publicly**. The floor depends on how the artifact is distributed, and a project that is only self-hosted today can become one that is redistributed or run as a service without any dependency changing. Produce a `LICENSING.md` and record the decision in an ADR.
 
 A permissive wrapper does **not** make the shipped artifact permissive. Identify the **copyleft floor** — the most restrictive license governing the aggregate:
 
@@ -533,6 +533,8 @@ _License identification and how the licenses interact — not legal advice._
 
 Record the copyleft-floor conclusion and the intended distribution mode (self-host / redistribute / SaaS) in an ADR, so a later pivot re-triggers the review.
 
+A proprietary or internal-only project records this too. "Internal use" is a distribution mode, not an exemption: write down where "internal" ends (for example a subsidiary, a contractor, a customer's environment), because the table above does not decide it. The first sentence of the template describes a project whose own files carry an SPDX licence; a proprietary project states its own terms there instead. The bundled-components and obligations tables stay as they are.
+
 ## Outputs
 
 This skill creates:
@@ -541,7 +543,7 @@ This skill creates:
 - [ ] `docs/adr/0002-adopt-development-best-practices.md` (HOW TO DEVELOP)
 - [ ] `docs/adr/0003-[technology-stack].md` (WHAT TECH)
 - [ ] `docs/adr/0004-operations-best-practices.md` (HOW TO OPERATE — Infrastructure/Hybrid only)
-- [ ] (Public project that vendors/bundles/static-links third-party code) `LICENSING.md` + an ADR recording the copyleft floor and distribution mode
+- [ ] (Any project that vendors/bundles/static-links third-party code or ships a container/WASM image, including one that is internal-only today) `LICENSING.md` + an ADR recording the copyleft floor and the intended distribution mode
 
 ## Validation
 
