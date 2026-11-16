@@ -23,5 +23,8 @@ bash "$here/docs.test.sh"
 echo "== diagrams.test.sh"
 bash "$here/diagrams.test.sh"
 [ $? -eq 0 ] || fails=$((fails + 1))
+echo "== reference.test.sh"
+bash "$here/reference.test.sh"
+[ $? -eq 0 ] || fails=$((fails + 1))
 echo "suites failed: $fails"
 exit $fails

@@ -28,6 +28,14 @@ Background on why the plugin works the way it does. Read these to understand, no
   — why `harden-github-actions` and `harden-gitlab-ci` are siblings and not one skill, and what
   neither covers.
 
+## Reference
+
+Things to look up.
+
+- [Script reference](reference/scripts.md)
+  — the usage, exit codes and scope of every check the skills ship, quoted from the scripts' own
+  header comments. Generated, so it cannot disagree with them.
+
 ## Elsewhere
 
 - The [README](../README.md) lists the skills and how to install them.
