@@ -20,5 +20,8 @@ run validate-quality-config check-tool-pins.sh tool-pins.test.sh runner
 echo "== docs.test.sh"
 bash "$here/docs.test.sh"
 [ $? -eq 0 ] || fails=$((fails + 1))
+echo "== diagrams.test.sh"
+bash "$here/diagrams.test.sh"
+[ $? -eq 0 ] || fails=$((fails + 1))
 echo "suites failed: $fails"
 exit $fails

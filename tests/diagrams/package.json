@@ -1,0 +1,10 @@
+{
+  "name": "po-docs-diagram-check",
+  "private": true,
+  "description": "Test-only: renders the Mermaid diagrams in docs/ with Pele. Not shipped with the plugin.",
+  "type": "module",
+  "license": "MIT",
+  "dependencies": {
+    "pele": "1.13.0"
+  }
+}

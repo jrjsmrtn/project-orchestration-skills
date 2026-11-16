@@ -17,3 +17,6 @@ CLAUDE.local.md
 
 # Local tmux session
 .tmuxp.yml
+
+# Test-only npm dependencies (Pele diagram check)
+node_modules/
