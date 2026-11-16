@@ -87,6 +87,10 @@ After installation, invoke skills using slash commands:
 
 Or reference them naturally in conversation - Claude will activate the appropriate skill based on context.
 
+## Documentation
+
+Background on how the plugin works, and why, is in [`docs/`](docs/README.md).
+
 ## Related Project
 
 This plugin is extracted from the [AI-Assisted Project Orchestration](https://github.com/jrjsmrtn/ai-assisted-project-orchestration) pattern language project, which documents patterns for effective AI-human collaboration in software project management.

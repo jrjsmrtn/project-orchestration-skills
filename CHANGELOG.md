@@ -8,6 +8,14 @@ During development the patch level is bumped per change (`0.1.x`).
 
 ## [Unreleased]
 
+### Added
+
+- **`docs/`: the first Diátaxis documentation**, starting with the explanation quadrant. Three pages: why the
+  skills ship checks and not just instructions, how a check is built and proved, and how the skills fit together
+  (including how this plugin and `project-maintenance-skills` divide the work). Each has a Mermaid diagram,
+  validated with the Pele renderer and viewed before committing. `docs/README.md` is the landing page, and the main
+  README links to it. Documentation only: no skill or script changed.
+
 ## [0.1.49] - 2026-11-15
 
 ### Changed
