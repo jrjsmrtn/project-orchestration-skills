@@ -24,6 +24,9 @@ Background on why the plugin works the way it does. Read these to understand, no
 - [Why a project grows through tiers](explanation/why-projects-graduate-through-tiers.md)
   — why `bootstrap-project` sets a project up at t0, t1 or t2, and why exposure is a separate
   setting from maturity.
+- [Why the hardening skills are tied to one forge](explanation/why-hardening-is-forge-specific.md)
+  — why `harden-github-actions` and `harden-gitlab-ci` are siblings and not one skill, and what
+  neither covers.
 
 ## Elsewhere
 

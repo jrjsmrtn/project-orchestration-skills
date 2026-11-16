@@ -17,6 +17,8 @@ During development the patch level is bumped per change (`0.1.x`).
   README links to it. Documentation only: no skill or script changed.
 - `docs/explanation/why-projects-graduate-through-tiers.md`: why `bootstrap-project` sets a project up at t0, t1 or
   t2 and expects it to move up, and why the distribution profile is a separate axis from the tier. Two diagrams.
+- `docs/explanation/why-hardening-is-forge-specific.md`: why the two hardening skills are tied to one forge each, how
+  GitHub's and GitLab's risks differ in kind, and why Forgejo and Gitea Actions are not covered. One diagram.
 
 ## [0.1.49] - 2026-11-15
 
