@@ -17,5 +17,8 @@ run harden-gitlab-ci check-gitlab-pins.sh gitlab.test.sh path
 run setup-git-hooks check-hygiene.sh hygiene.test.sh runner
 run harden-github-actions check-action-pins.sh action-pins.test.sh runner
 run validate-quality-config check-tool-pins.sh tool-pins.test.sh runner
+echo "== docs.test.sh"
+bash "$here/docs.test.sh"
+[ $? -eq 0 ] || fails=$((fails + 1))
 echo "suites failed: $fails"
 exit $fails

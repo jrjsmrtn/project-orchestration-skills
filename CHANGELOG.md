@@ -19,6 +19,7 @@ During development the patch level is bumped per change (`0.1.x`).
   t2 and expects it to move up, and why the distribution profile is a separate axis from the tier. Two diagrams.
 - `docs/explanation/why-hardening-is-forge-specific.md`: why the two hardening skills are tied to one forge each, how
   GitHub's and GitLab's risks differ in kind, and why Forgejo and Gitea Actions are not covered. One diagram.
+- `tests/docs.test.sh`, run by `tests/run.sh`: checks that every relative link and `#anchor` in `docs/` and the README resolves, and that every `check-*.sh` and skill name in backticks exists. It plants one fault of each kind in a copy of the tree and asserts each is reported, and fails on an empty docs tree or one with no links. Test only: no skill or script changed.
 
 ## [0.1.49] - 2026-11-15
 
