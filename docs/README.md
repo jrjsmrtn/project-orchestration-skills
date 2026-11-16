@@ -21,6 +21,9 @@ Background on why the plugin works the way it does. Read these to understand, no
 - [How the skills fit together](explanation/how-the-skills-fit-together.md)
   — how the skills are grouped by moment in a project's life, and how this plugin and
   `project-maintenance-skills` divide the work.
+- [Why a project grows through tiers](explanation/why-projects-graduate-through-tiers.md)
+  — why `bootstrap-project` sets a project up at t0, t1 or t2, and why exposure is a separate
+  setting from maturity.
 
 ## Elsewhere
 
