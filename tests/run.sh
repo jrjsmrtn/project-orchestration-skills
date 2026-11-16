@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # usage: tests/run.sh      run from anywhere; exits non-zero if any suite fails or a script is missing.
-# Each suite plants faults in a throwaway repository and asserts the check reports them (see ADR-0009).
+# Each suite plants faults in a throwaway repository and asserts the check reports them (see docs/explanation/how-a-check-is-built-and-proved.md).
 # The suites run the scripts shipped in skills/<name>/scripts/, not copies.
 here=$(cd "$(dirname "$0")" && pwd); root=$(dirname "$here"); fails=0
 run() { # skill script-name suite mode(runner|path)
