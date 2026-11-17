@@ -28,6 +28,13 @@ Background on why the plugin works the way it does. Read these to understand, no
   — why `harden-github-actions` and `harden-gitlab-ci` are siblings and not one skill, and what
   neither covers.
 
+## How-to guides
+
+Steps for a task you already have.
+
+- [How to run a check in your project](how-to/run-a-check-in-your-project.md)
+  — copy a skill's script into a project, run it, and read the result.
+
 ## Reference
 
 Things to look up.
