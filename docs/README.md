@@ -28,6 +28,15 @@ Background on why the plugin works the way it does. Read these to understand, no
   — why `harden-github-actions` and `harden-gitlab-ci` are siblings and not one skill, and what
   neither covers.
 
+## Tutorials
+
+Learn by doing, start to finish.
+
+- [Bootstrap your first project with your agent](tutorials/bootstrap-a-project-with-your-agent.md)
+  — ask your agent to set up a t0 project, then check its work yourself.
+- [How a check works, by hand](tutorials/how-a-check-works-by-hand.md)
+  — run one check on a tiny project, watch it fail, fix it, and break it on purpose.
+
 ## How-to guides
 
 Steps for a task you already have.
